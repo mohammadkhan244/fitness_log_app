@@ -5,18 +5,34 @@ import type { Category, Cause, DayStatus, Domain, Equipment, ExerciseSet, Unit }
 import ExerciseRow, { type RowState } from './ExerciseRow';
 import SessionHeader, { type SessionValues } from './SessionHeader';
 
+// Week 1 = June 23, 2025 (the Monday from which Notion weekly tracking began)
+const PROGRAM_START = new Date('2025-06-23T00:00:00');
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function weekFromDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  const days = Math.round((d.getTime() - PROGRAM_START.getTime()) / (1000 * 60 * 60 * 24));
+  if (days < 0) return '';
+  return String(Math.floor(days / 7) + 1);
+}
+
 function defaultSession(): SessionValues {
-  return { date: today(), week: '', domain: 'Gym', equipment: 'Bodyweight', dayStatus: 'Full', cause: '', fatigue: '' };
+  const t = today();
+  return { date: t, week: weekFromDate(t), domain: 'Gym', equipment: 'Bodyweight', dayStatus: 'Full', cause: '', fatigue: '' };
 }
 
 function loadSession(): SessionValues {
+  const t = today();
   try {
     const raw = localStorage.getItem('session-meta');
-    if (raw) return { ...defaultSession(), ...JSON.parse(raw) as Partial<SessionValues>, date: today() };
+    if (raw) {
+      const saved = JSON.parse(raw) as Partial<SessionValues>;
+      // Always reset date and week to today on load
+      return { ...defaultSession(), ...saved, date: t, week: weekFromDate(t) };
+    }
   } catch { /* ignore */ }
   return defaultSession();
 }
@@ -44,6 +60,10 @@ export default function LogScreen({ sync }: { sync: () => Promise<void> }) {
   function updateSession(patch: Partial<SessionValues>) {
     setSession((prev) => {
       const next = { ...prev, ...patch };
+      // Auto-recompute week when date changes (user can still override week separately)
+      if (patch.date && !('week' in patch)) {
+        next.week = weekFromDate(patch.date);
+      }
       try { localStorage.setItem('session-meta', JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
@@ -105,7 +125,7 @@ export default function LogScreen({ sync }: { sync: () => Promise<void> }) {
   }
 
   return (
-    <div className="max-w-lg mx-auto pb-24">
+    <div className="max-w-lg mx-auto pb-36">
       <SessionHeader
         values={session}
         onChange={updateSession}
@@ -139,7 +159,7 @@ export default function LogScreen({ sync }: { sync: () => Promise<void> }) {
       </div>
 
       {/* Sticky save bar */}
-      <div className="fixed bottom-0 inset-x-0 bg-gray-950 border-t border-gray-800 p-4 flex items-center gap-3">
+      <div className="fixed bottom-12 inset-x-0 bg-gray-950 border-t border-gray-800 p-4 flex items-center gap-3">
         <div className="max-w-lg mx-auto w-full flex items-center gap-3">
           {msg && <span className="text-xs text-gray-400 flex-1 truncate">{msg}</span>}
           <button
