@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const ALLOWED_PREFIXES = ['data_sources/', 'pages', 'databases', 'blocks/'];
+const ALLOWED_PREFIXES = ['data_sources/', 'pages', 'databases', 'blocks/', 'search'];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
