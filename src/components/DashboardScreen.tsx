@@ -1,22 +1,28 @@
 import { useState } from 'react';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useBodyMap } from '../hooks/useBodyMap';
 import BenchmarkChart from './charts/BenchmarkChart';
+import BodyMap from './charts/BodyMap';
 import ConsistencyGrid from './charts/ConsistencyGrid';
 import FatigueTrends from './charts/FatigueTrends';
+import WeekDetail from './WeekDetail';
 import DecisionCards from './DecisionCards';
 
-type Section = 'overview' | 'benchmarks' | 'fatigue' | 'decisions';
+type Section = 'overview' | 'benchmarks' | 'fatigue' | 'body' | 'decisions';
 
 const SECTIONS: Array<{ id: Section; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'benchmarks', label: 'Benchmarks' },
   { id: 'fatigue', label: 'Fatigue' },
+  { id: 'body', label: 'Body' },
   { id: 'decisions', label: 'Decisions' },
 ];
 
 export default function DashboardScreen() {
   const [section, setSection] = useState<Section>('overview');
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const data = useDashboardData();
+  const bodyMapData = useBodyMap();
 
   return (
     <div className="max-w-lg mx-auto">
@@ -44,7 +50,7 @@ export default function DashboardScreen() {
           </div>
         )}
 
-        {!data.loading && data.totalSets === 0 && (
+        {!data.loading && data.totalSets === 0 && section !== 'decisions' && (
           <div className="text-xs text-gray-600 text-center py-8">
             No data yet — log a session or wait for the import to finish.
           </div>
@@ -56,9 +62,14 @@ export default function DashboardScreen() {
             <div>
               <SectionTitle>65-Week Training Map</SectionTitle>
               <p className="text-xs text-gray-500 mb-3">
-                Each cell = one week. Color = dominant domain. Brighter = more sets logged.
+                Each cell = one week. Color = dominant domain. Brighter = more sets. Tap a cell to see that week.
               </p>
-              <ConsistencyGrid weeks={data.weeks} />
+              <ConsistencyGrid
+                weeks={data.weeks}
+                totalWeeks={data.maxWeek}
+                onWeekClick={setSelectedWeek}
+                selectedWeek={selectedWeek}
+              />
             </div>
 
             <Stat label="Total sets logged" value={String(data.totalSets)} />
@@ -95,6 +106,17 @@ export default function DashboardScreen() {
           </div>
         )}
 
+        {/* Body */}
+        {section === 'body' && (
+          <div className="space-y-4">
+            <SectionTitle>Muscle Volume Map</SectionTitle>
+            <p className="text-xs text-gray-500">
+              All-time sets by muscle group. Tap a region to see exercises.
+            </p>
+            <BodyMap data={bodyMapData} />
+          </div>
+        )}
+
         {/* Decisions */}
         {section === 'decisions' && (
           <div className="space-y-4">
@@ -103,6 +125,11 @@ export default function DashboardScreen() {
           </div>
         )}
       </div>
+
+      {/* Week drill-down sheet */}
+      {selectedWeek !== null && (
+        <WeekDetail week={selectedWeek} onClose={() => setSelectedWeek(null)} />
+      )}
     </div>
   );
 }

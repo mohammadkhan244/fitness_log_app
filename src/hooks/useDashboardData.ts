@@ -23,6 +23,7 @@ export interface DashboardData {
   benchmarks: BenchmarkSeries[];
   allExercises: string[];
   totalSets: number;
+  maxWeek: number;
   loading: boolean;
 }
 
@@ -35,7 +36,7 @@ export function useDashboardData(): DashboardData {
   }, []);
 
   if (!result) {
-    return { weeks: [], benchmarks: [], allExercises: [], totalSets: 0, loading: true };
+    return { weeks: [], benchmarks: [], allExercises: [], totalSets: 0, maxWeek: 65, loading: true };
   }
   return { ...result, loading: false };
 }
@@ -45,13 +46,15 @@ export function useDashboardData(): DashboardData {
 function computeDashboard(sets: ExerciseSet[]) {
   const weekMap = new Map<number, WeekSummary>();
 
+  // Week 1 = June 23, 2025 — must match the LogScreen constant
+  const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
+
   // derive a week number from date string if week field missing
   const getWeek = (s: ExerciseSet): number => {
     if (s.week != null) return s.week;
-    // fallback: count weeks from 2024-01-01 as week 1
-    const origin = new Date('2024-01-01').getTime();
     const d = new Date(s.date + 'T12:00:00').getTime();
-    return Math.max(1, Math.ceil((d - origin) / (7 * 24 * 3600 * 1000)));
+    const days = Math.round((d - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
+    return Math.max(1, Math.floor(days / 7) + 1);
   };
 
   for (const s of sets) {
@@ -92,6 +95,7 @@ function computeDashboard(sets: ExerciseSet[]) {
   }
 
   const weeks = Array.from(weekMap.values()).sort((a, b) => a.week - b.week);
+  const maxWeek = weeks.length > 0 ? Math.max(...weeks.map((w) => w.week)) : 65;
 
   // ── Benchmark series ──────────────────────────────────────────────────────
   const benchmarkCategories: Category[] = ['Benchmark'];
@@ -131,5 +135,6 @@ function computeDashboard(sets: ExerciseSet[]) {
     benchmarks,
     allExercises,
     totalSets: sets.length,
+    maxWeek,
   };
 }

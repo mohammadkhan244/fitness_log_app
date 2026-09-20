@@ -4,6 +4,8 @@ import type { Domain } from '../../types';
 interface Props {
   weeks: WeekSummary[];
   totalWeeks?: number;
+  onWeekClick?: (week: number) => void;
+  selectedWeek?: number | null;
 }
 
 const DOMAIN_COLORS: Record<Domain, string> = {
@@ -15,7 +17,7 @@ const DOMAIN_COLORS: Record<Domain, string> = {
 
 const DOMAIN_ORDER: Domain[] = ['Gym', 'Home', 'Hotel', 'Outdoor'];
 
-export default function ConsistencyGrid({ weeks, totalWeeks = 65 }: Props) {
+export default function ConsistencyGrid({ weeks, totalWeeks = 65, onWeekClick, selectedWeek }: Props) {
   // Build a map from week number to summary
   const weekMap = new Map(weeks.map((w) => [w.week, w]));
 
@@ -53,14 +55,16 @@ export default function ConsistencyGrid({ weeks, totalWeeks = 65 }: Props) {
           const color = w ? getDominantColor(w) : null;
           const intensity = w ? Math.min(1, w.totalSets / 20) : 0;
 
+          const isSelected = selectedWeek === wk;
           return (
             <div
               key={wk}
               title={w ? buildTooltip(wk, w) : `Week ${wk}: no data`}
-              className="aspect-square rounded-sm"
+              onClick={() => onWeekClick?.(wk)}
+              className={`aspect-square rounded-sm transition-all ${onWeekClick ? 'cursor-pointer hover:ring-1 hover:ring-white/40' : ''} ${isSelected ? 'ring-2 ring-white' : ''}`}
               style={
                 w
-                  ? { backgroundColor: color ?? '#4b5563', opacity: 0.3 + intensity * 0.7 }
+                  ? { backgroundColor: color ?? '#4b5563', opacity: isSelected ? 1 : 0.3 + intensity * 0.7 }
                   : { backgroundColor: '#1f2937' }
               }
             />
