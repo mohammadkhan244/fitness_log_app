@@ -34,48 +34,18 @@ const UNIT_SHORT: Record<string, string> = {
 export default function WeekDetail({ week, onClose }: Props) {
   const [start, end] = weekDateRange(week);
 
+  // Full-table scan so we catch entries regardless of whether they have
+  // an explicit week field, a date in range, or just a computed-week match.
+  // The dataset is small enough (<10k rows) that this is effectively instant.
   const allEntries = useLiveQuery(async () => {
-    // Primary: date-range query (always indexed)
-    const byDate = await db.sets
-      .where('date')
-      .between(start, end, true, false)
-      .sortBy('date');
-
-    // Secondary: explicit week field (indexed in schema v3+; skip if it fails)
-    let byWeekField: ExerciseSet[] = [];
-    try {
-      byWeekField = await db.sets.where('week').equals(week).toArray();
-    } catch {
-      // week index not yet available (pre-v3 schema) — fall back to date range only
-    }
-
-    // Also scan ALL sets for entries with an explicit week field matching,
-    // whose dates fall outside the computed date range (e.g., imported with
-    // a Notion week number that doesn't align with the June 23 origin).
-    // Only needed if byWeekField failed above.
-    if (byWeekField.length === 0 && byDate.length === 0) {
-      const all = await db.sets.toArray();
-      byWeekField = all.filter((s) => s.week === week);
-    }
-
-    // Merge + deduplicate by id, then fall back to computing week from date
-    const seen = new Set<number>();
-    const merged = [...byDate, ...byWeekField].filter((e) => {
-      if (e.id == null || seen.has(e.id)) return false;
-      seen.add(e.id);
-      return true;
-    });
-
-    // Also include entries without an explicit week whose computed week matches
-    // (handles entries where date falls just outside the 7-day window due to
-    //  timezone rounding, e.g., entries logged on the exact boundary day)
-    if (merged.length === 0) {
-      const all = await db.sets.toArray();
-      const fallback = all.filter((s) => !seen.has(s.id ?? -1) && computedWeek(s.date) === week);
-      merged.push(...fallback);
-    }
-
-    return merged.sort((a, b) => a.date.localeCompare(b.date));
+    const all = await db.sets.toArray();
+    const matched = all.filter(
+      (s) =>
+        s.week === week ||               // Notion-imported week field
+        (s.date >= start && s.date < end) || // date falls in computed range
+        computedWeek(s.date) === week,       // computed week matches
+    );
+    return matched.sort((a, b) => a.date.localeCompare(b.date));
   }, [week]);
 
   const byDate = new Map<string, ExerciseSet[]>();
@@ -117,7 +87,9 @@ export default function WeekDetail({ week, onClose }: Props) {
         {!allEntries ? (
           <div className="p-4 text-xs text-gray-600 text-center">Loading…</div>
         ) : allEntries.length === 0 ? (
-          <div className="p-4 text-xs text-gray-600 text-center">No entries found for week {week}.</div>
+          <div className="p-4 text-xs text-gray-600 text-center">
+            No entries found for week {week}.
+          </div>
         ) : (
           <div className="px-4 pb-6 space-y-4">
             {Array.from(byDate.entries()).map(([date, dayEntries]) => (

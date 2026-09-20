@@ -6,10 +6,9 @@ import BodyMap from './charts/BodyMap';
 import ConsistencyGrid from './charts/ConsistencyGrid';
 import FatigueTrends from './charts/FatigueTrends';
 import WeekDetail from './WeekDetail';
-import DecisionCards from './DecisionCards';
 import ProgressTab from './ProgressTab';
 
-type Section = 'overview' | 'progress' | 'benchmarks' | 'fatigue' | 'body' | 'decisions';
+type Section = 'overview' | 'progress' | 'benchmarks' | 'fatigue' | 'body';
 
 const SECTIONS: Array<{ id: Section; label: string }> = [
   { id: 'overview', label: 'Overview' },
@@ -17,7 +16,6 @@ const SECTIONS: Array<{ id: Section; label: string }> = [
   { id: 'benchmarks', label: 'Benchmarks' },
   { id: 'fatigue', label: 'Fatigue' },
   { id: 'body', label: 'Body' },
-  { id: 'decisions', label: 'Decisions' },
 ];
 
 export default function DashboardScreen() {
@@ -37,7 +35,7 @@ export default function DashboardScreen() {
           <button
             key={s.id}
             onClick={() => setSection(s.id)}
-            className={`flex-shrink-0 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`flex-1 py-2.5 text-xs font-medium whitespace-nowrap transition-colors ${
               section === s.id
                 ? 'text-white border-b-2 border-white'
                 : 'text-gray-500 hover:text-gray-300'
@@ -49,18 +47,17 @@ export default function DashboardScreen() {
       </div>
 
       <div className="p-4 space-y-6">
-        {section !== 'progress' && section !== 'decisions' && section !== 'body' && data.loading && (
+        {section !== 'progress' && section !== 'body' && data.loading && (
           <div className="text-xs text-gray-600 text-center py-8">
             Loading {data.totalSets > 0 ? `${data.totalSets} sets` : 'data'}…
           </div>
         )}
 
-        {section !== 'progress' && section !== 'decisions' && section !== 'body' &&
-          !data.loading && data.totalSets === 0 && (
-            <div className="text-xs text-gray-600 text-center py-8">
-              No data yet — log a session or wait for the import to finish.
-            </div>
-          )}
+        {section !== 'progress' && section !== 'body' && !data.loading && data.totalSets === 0 && (
+          <div className="text-xs text-gray-600 text-center py-8">
+            No data yet — log a session or wait for the import to finish.
+          </div>
+        )}
 
         {/* Overview */}
         {section === 'overview' && !data.loading && data.totalSets > 0 && (
@@ -127,14 +124,6 @@ export default function DashboardScreen() {
               All-time sets by muscle group. Tap a region to see exercises.
             </p>
             <BodyMap data={bodyMapData} />
-          </div>
-        )}
-
-        {/* Decisions */}
-        {section === 'decisions' && (
-          <div className="space-y-4">
-            <SectionTitle>Training Decisions</SectionTitle>
-            <DecisionCards />
           </div>
         )}
       </div>
