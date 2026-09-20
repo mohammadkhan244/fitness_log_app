@@ -7,8 +7,9 @@ import ConsistencyGrid from './charts/ConsistencyGrid';
 import FatigueTrends from './charts/FatigueTrends';
 import WeekDetail from './WeekDetail';
 import ProgressTab from './ProgressTab';
+import InsightsTab from './InsightsTab';
 
-type Section = 'overview' | 'progress' | 'benchmarks' | 'fatigue' | 'body';
+type Section = 'overview' | 'progress' | 'benchmarks' | 'fatigue' | 'body' | 'insights';
 
 const SECTIONS: Array<{ id: Section; label: string }> = [
   { id: 'overview', label: 'Overview' },
@@ -16,6 +17,7 @@ const SECTIONS: Array<{ id: Section; label: string }> = [
   { id: 'benchmarks', label: 'Benchmarks' },
   { id: 'fatigue', label: 'Fatigue' },
   { id: 'body', label: 'Body' },
+  { id: 'insights', label: 'Insights' },
 ];
 
 export default function DashboardScreen() {
@@ -47,13 +49,13 @@ export default function DashboardScreen() {
       </div>
 
       <div className="p-4 space-y-6">
-        {section !== 'progress' && section !== 'body' && data.loading && (
+        {section !== 'progress' && section !== 'body' && section !== 'insights' && data.loading && (
           <div className="text-xs text-gray-600 text-center py-8">
             Loading {data.totalSets > 0 ? `${data.totalSets} sets` : 'data'}…
           </div>
         )}
 
-        {section !== 'progress' && section !== 'body' && !data.loading && data.totalSets === 0 && (
+        {section !== 'progress' && section !== 'body' && section !== 'insights' && !data.loading && data.totalSets === 0 && (
           <div className="text-xs text-gray-600 text-center py-8">
             No data yet — log a session or wait for the import to finish.
           </div>
@@ -124,6 +126,14 @@ export default function DashboardScreen() {
               All-time sets by muscle group. Tap a region to see exercises.
             </p>
             <BodyMap data={bodyMapData} />
+          </div>
+        )}
+
+        {/* Insights */}
+        {section === 'insights' && (
+          <div className="space-y-4">
+            <SectionTitle>Training Insights</SectionTitle>
+            <InsightsTab bodyMap={bodyMapData} dashboard={data} />
           </div>
         )}
       </div>
