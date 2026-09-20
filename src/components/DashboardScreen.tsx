@@ -7,11 +7,13 @@ import ConsistencyGrid from './charts/ConsistencyGrid';
 import FatigueTrends from './charts/FatigueTrends';
 import WeekDetail from './WeekDetail';
 import DecisionCards from './DecisionCards';
+import ProgressTab from './ProgressTab';
 
-type Section = 'overview' | 'benchmarks' | 'fatigue' | 'body' | 'decisions';
+type Section = 'overview' | 'progress' | 'benchmarks' | 'fatigue' | 'body' | 'decisions';
 
 const SECTIONS: Array<{ id: Section; label: string }> = [
   { id: 'overview', label: 'Overview' },
+  { id: 'progress', label: 'Progress' },
   { id: 'benchmarks', label: 'Benchmarks' },
   { id: 'fatigue', label: 'Fatigue' },
   { id: 'body', label: 'Body' },
@@ -26,13 +28,16 @@ export default function DashboardScreen() {
 
   return (
     <div className="max-w-lg mx-auto">
-      {/* Section tabs */}
-      <div className="flex border-b border-gray-800 sticky top-0 bg-gray-950 z-10">
+      {/* Scrollable tab bar */}
+      <div
+        className="flex border-b border-gray-800 sticky top-0 bg-gray-950 z-10 overflow-x-auto"
+        style={{ scrollbarWidth: 'none' }}
+      >
         {SECTIONS.map((s) => (
           <button
             key={s.id}
             onClick={() => setSection(s.id)}
-            className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
+            className={`flex-shrink-0 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors ${
               section === s.id
                 ? 'text-white border-b-2 border-white'
                 : 'text-gray-500 hover:text-gray-300'
@@ -44,17 +49,18 @@ export default function DashboardScreen() {
       </div>
 
       <div className="p-4 space-y-6">
-        {data.loading && (
+        {section !== 'progress' && section !== 'decisions' && section !== 'body' && data.loading && (
           <div className="text-xs text-gray-600 text-center py-8">
             Loading {data.totalSets > 0 ? `${data.totalSets} sets` : 'data'}…
           </div>
         )}
 
-        {!data.loading && data.totalSets === 0 && section !== 'decisions' && (
-          <div className="text-xs text-gray-600 text-center py-8">
-            No data yet — log a session or wait for the import to finish.
-          </div>
-        )}
+        {section !== 'progress' && section !== 'decisions' && section !== 'body' &&
+          !data.loading && data.totalSets === 0 && (
+            <div className="text-xs text-gray-600 text-center py-8">
+              No data yet — log a session or wait for the import to finish.
+            </div>
+          )}
 
         {/* Overview */}
         {section === 'overview' && !data.loading && data.totalSets > 0 && (
@@ -62,7 +68,7 @@ export default function DashboardScreen() {
             <div>
               <SectionTitle>65-Week Training Map</SectionTitle>
               <p className="text-xs text-gray-500 mb-3">
-                Each cell = one week. Color = dominant domain. Brighter = more sets. Tap a cell to see that week.
+                Each cell = one week. Color = dominant domain. Brighter = more sets. Tap a cell to drill in.
               </p>
               <ConsistencyGrid
                 weeks={data.weeks}
@@ -71,10 +77,17 @@ export default function DashboardScreen() {
                 selectedWeek={selectedWeek}
               />
             </div>
-
             <Stat label="Total sets logged" value={String(data.totalSets)} />
             <Stat label="Weeks active" value={String(data.weeks.filter((w) => w.totalSets > 0).length)} />
             <Stat label="Exercises tracked" value={String(data.allExercises.length)} />
+          </div>
+        )}
+
+        {/* Progress */}
+        {section === 'progress' && (
+          <div className="space-y-4">
+            <SectionTitle>Exercise Progression</SectionTitle>
+            <ProgressTab />
           </div>
         )}
 

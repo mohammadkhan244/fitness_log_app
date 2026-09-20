@@ -63,3 +63,9 @@ export interface Meta {
   key: string;
   value: string;
 }
+
+export interface ExerciseAlias {
+  id?: number;
+  alias: string;      // alternate name, e.g. "BSS" or "Dips"
+  canonical: string;  // preferred name, e.g. "Bulgarian Split Squat" or "Tricep Dips"
+}

@@ -1,7 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
 
-// Keyword → muscle group mapping (case-insensitive substring)
 const KEYWORD_MUSCLE: Array<{ kw: string[]; muscles: string[] }> = [
   { kw: ['pull-up', 'pullup', 'pull up', 'chin', 'lat pull', 'pulldown'], muscles: ['Lats', 'Biceps', 'Upper Back'] },
   { kw: ['row', 'cable row', 'bent over', 'one arm', 't-bar'], muscles: ['Upper Back', 'Lats', 'Biceps'] },
@@ -74,20 +73,28 @@ export interface BodyMapData {
 
 export function useBodyMap(): BodyMapData {
   const result = useLiveQuery(async () => {
-    const sets = await db.sets.toArray();
+    const [sets, aliasRows] = await Promise.all([
+      db.sets.toArray(),
+      db.exerciseAliases.toArray(),
+    ]);
+
+    const aliasMap = new Map(aliasRows.map((a) => [a.alias.toLowerCase(), a.canonical]));
+    const resolve = (name: string) => aliasMap.get(name.toLowerCase()) ?? name;
+
     const muscleSets = new Map<Muscle, number>();
     const muscleExercises = new Map<Muscle, Set<string>>();
     const unmappedSet = new Set<string>();
 
     for (const s of sets) {
-      const muscles = mapExerciseToMuscles(s.exercise);
+      const resolved = resolve(s.exercise);
+      const muscles = mapExerciseToMuscles(resolved);
       if (muscles.length === 0) {
-        unmappedSet.add(s.exercise);
+        unmappedSet.add(resolved);
       } else {
         for (const m of muscles) {
           muscleSets.set(m, (muscleSets.get(m) ?? 0) + 1);
           const exSet = muscleExercises.get(m) ?? new Set<string>();
-          exSet.add(s.exercise);
+          exSet.add(resolved);
           muscleExercises.set(m, exSet);
         }
       }
