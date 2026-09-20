@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { db } from '../db/schema';
 import { useExercises } from '../hooks/useExercises';
 import type { Category, Cause, DayStatus, Domain, Equipment, ExerciseSet, Unit } from '../types';
@@ -30,7 +30,6 @@ function loadSession(): SessionValues {
     const raw = localStorage.getItem('session-meta');
     if (raw) {
       const saved = JSON.parse(raw) as Partial<SessionValues>;
-      // Always reset date and week to today on load
       return { ...defaultSession(), ...saved, date: t, week: weekFromDate(t) };
     }
   } catch { /* ignore */ }
@@ -49,18 +48,21 @@ function newRow(set: number, from?: RowState): RowState {
   };
 }
 
-export default function LogScreen({ sync }: { sync: () => Promise<void> }) {
+interface Props {
+  sync: () => Promise<void>;
+  saveTrigger: React.MutableRefObject<() => void>;
+  onSavingChange: (saving: boolean, msg: string) => void;
+}
+
+export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) {
   const [session, setSession] = useState<SessionValues>(loadSession);
   const [rows, setRows] = useState<RowState[]>(() => [newRow(1)]);
   const [headerOpen, setHeaderOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
   const { names: exerciseNames } = useExercises();
 
   function updateSession(patch: Partial<SessionValues>) {
     setSession((prev) => {
       const next = { ...prev, ...patch };
-      // Auto-recompute week when date changes (user can still override week separately)
       if (patch.date && !('week' in patch)) {
         next.week = weekFromDate(patch.date);
       }
@@ -89,10 +91,12 @@ export default function LogScreen({ sync }: { sync: () => Promise<void> }) {
 
   async function handleSave() {
     const valid = rows.filter((r) => r.exercise.trim());
-    if (valid.length === 0) { setMsg('Add at least one exercise.'); return; }
+    if (valid.length === 0) {
+      onSavingChange(false, 'Add at least one exercise.');
+      return;
+    }
 
-    setSaving(true);
-    setMsg('');
+    onSavingChange(true, '');
     try {
       const entries: Omit<ExerciseSet, 'id'>[] = valid.map((r) => ({
         clientId: crypto.randomUUID(),
@@ -114,18 +118,21 @@ export default function LogScreen({ sync }: { sync: () => Promise<void> }) {
 
       await db.sets.bulkAdd(entries);
       setRows([newRow(1)]);
-      setMsg(`${valid.length} set${valid.length > 1 ? 's' : ''} saved.`);
+      onSavingChange(false, `${valid.length} set${valid.length > 1 ? 's' : ''} saved`);
       void sync();
     } catch (err) {
-      setMsg('Save failed — check console.');
+      onSavingChange(false, 'Save failed');
       console.error(err);
-    } finally {
-      setSaving(false);
     }
   }
 
+  // Register save function with parent every render so it stays fresh
+  useEffect(() => {
+    saveTrigger.current = () => void handleSave();
+  });
+
   return (
-    <div className="max-w-lg mx-auto pb-36">
+    <div className="max-w-lg mx-auto">
       <SessionHeader
         values={session}
         onChange={updateSession}
@@ -152,25 +159,10 @@ export default function LogScreen({ sync }: { sync: () => Promise<void> }) {
             const last = rows[rows.length - 1];
             setRows((prev) => [...prev, newRow((last?.set ?? 0) + 1)]);
           }}
-          className="w-full py-2.5 border border-dashed border-gray-700 rounded-lg text-sm text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors"
+          className="w-full h-11 border border-dashed border-gray-700 rounded-xl text-sm text-gray-500 hover:text-gray-300 hover:border-gray-600 active:bg-gray-900 transition-colors"
         >
           + Add exercise
         </button>
-      </div>
-
-      {/* Sticky save bar */}
-      <div className="fixed bottom-12 inset-x-0 bg-gray-950 border-t border-gray-800 p-4 flex items-center gap-3">
-        <div className="max-w-lg mx-auto w-full flex items-center gap-3">
-          {msg && <span className="text-xs text-gray-400 flex-1 truncate">{msg}</span>}
-          <button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={saving}
-            className="ml-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg text-sm font-medium text-white transition-colors"
-          >
-            {saving ? 'Saving…' : 'Save session'}
-          </button>
-        </div>
       </div>
     </div>
   );

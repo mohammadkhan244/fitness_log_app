@@ -37,7 +37,7 @@ export default function Autocomplete({
         autoFocus={autoFocus}
         placeholder={placeholder}
         autoComplete="off"
-        className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500"
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 h-11 text-base text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500"
         onChange={(e) => {
           onChange(e.target.value);
           setCursor(0);
@@ -62,12 +62,12 @@ export default function Autocomplete({
         }}
       />
       {open && filtered.length > 0 && (
-        <ul className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-700 rounded shadow-xl max-h-56 overflow-y-auto">
+        <ul className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-64 overflow-y-auto">
           {filtered.map((opt, i) => (
             <li
               key={opt}
               onMouseDown={() => select(opt)}
-              className={`px-3 py-2 text-sm cursor-pointer ${
+              className={`px-3 py-3 text-base cursor-pointer ${
                 i === cursor
                   ? 'bg-blue-700 text-white'
                   : 'text-gray-300 hover:bg-gray-700'

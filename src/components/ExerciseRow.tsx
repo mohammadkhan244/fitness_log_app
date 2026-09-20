@@ -25,8 +25,9 @@ const CATEGORIES: Category[] = [
 ];
 const UNITS: Unit[] = ['reps', 'reps_total', 'reps_per_leg', 'lbs', 'seconds', 'none'];
 
+// 16px font prevents iOS auto-zoom on focus; h-11 = 44px touch target
 const fieldCls =
-  'bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500';
+  'bg-gray-800 border border-gray-700 rounded-lg px-3 h-11 text-base text-gray-100 focus:outline-none focus:border-blue-500';
 
 export default function ExerciseRow({
   row,
@@ -37,7 +38,7 @@ export default function ExerciseRow({
   autoFocus,
 }: Props) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-3 space-y-2">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 space-y-2">
       {/* Row 1: exercise + category */}
       <div className="flex gap-2">
         <Autocomplete
@@ -62,14 +63,14 @@ export default function ExerciseRow({
 
       {/* Row 2: set / value / unit */}
       <div className="flex gap-2 items-center">
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="text-xs text-gray-500">Set</span>
           <input
             type="number"
             value={row.set}
             onChange={(e) => onChange({ set: Number(e.target.value) })}
             min="1"
-            className={`w-12 text-center ${fieldCls}`}
+            className={`w-14 text-center ${fieldCls}`}
           />
         </div>
         <input
@@ -78,6 +79,7 @@ export default function ExerciseRow({
           onChange={(e) => onChange({ value: e.target.value })}
           placeholder="Value"
           step="any"
+          inputMode="decimal"
           className={`flex-1 ${fieldCls}`}
         />
         <select
@@ -105,7 +107,7 @@ export default function ExerciseRow({
           type="button"
           onClick={onRepeat}
           title="Repeat this set (next set number)"
-          className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-colors flex-shrink-0"
+          className="h-11 px-3 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-400 hover:text-gray-200 hover:bg-gray-700 active:bg-gray-600 transition-colors flex-shrink-0"
         >
           +set
         </button>
@@ -113,7 +115,7 @@ export default function ExerciseRow({
           type="button"
           onClick={onRemove}
           title="Remove row"
-          className="px-2 py-1.5 text-gray-600 hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
+          className="h-11 w-11 flex items-center justify-center text-gray-600 hover:text-red-400 active:text-red-300 transition-colors flex-shrink-0 text-xl"
         >
           ×
         </button>

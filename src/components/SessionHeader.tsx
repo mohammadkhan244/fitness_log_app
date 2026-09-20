@@ -31,37 +31,38 @@ const STATUS_LABEL: Record<DayStatus, string> = {
   'Rest-on-signal': 'Rest',
 };
 
+// 16px font = no iOS zoom; h-11 = 44px touch target
 const selectCls =
-  'w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-blue-500';
+  'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 h-11 text-base text-gray-100 focus:outline-none focus:border-blue-500';
 
 const inputCls =
-  'w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-blue-500';
+  'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 h-11 text-base text-gray-100 focus:outline-none focus:border-blue-500';
 
 export default function SessionHeader({ values, onChange, collapsed, onToggle }: Props) {
   return (
     <div className="bg-gray-900 border-b border-gray-800">
-      {/* Collapsed summary row — always visible */}
+      {/* Collapsed summary — tap to expand */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 text-left"
+        className="w-full flex items-center justify-between px-4 h-12 text-left"
       >
-        <div className="flex items-center gap-2 text-sm flex-wrap">
-          <span className="text-gray-400">{values.date}</span>
+        <div className="flex items-center gap-2 text-sm flex-wrap min-w-0">
+          <span className="text-gray-400 flex-shrink-0">{values.date}</span>
           <span className="text-gray-700">·</span>
-          <span className="text-gray-200">{values.domain}</span>
+          <span className="text-gray-200 flex-shrink-0">{values.domain}</span>
           <span className="text-gray-700">·</span>
-          <span className="text-gray-400">{values.equipment}</span>
+          <span className="text-gray-400 flex-shrink-0">{values.equipment}</span>
           {values.week && (
             <>
               <span className="text-gray-700">·</span>
-              <span className="text-gray-500">Wk {values.week}</span>
+              <span className="text-gray-500 flex-shrink-0">Wk {values.week}</span>
             </>
           )}
           {values.dayStatus !== 'Full' && (
-            <span className="text-yellow-500 text-xs ml-1">{values.dayStatus}</span>
+            <span className="text-yellow-500 text-xs flex-shrink-0">{values.dayStatus}</span>
           )}
           {values.fatigue && (
-            <span className="text-gray-500 text-xs">fatigue {values.fatigue}</span>
+            <span className="text-gray-500 text-xs flex-shrink-0">fatigue {values.fatigue}</span>
           )}
         </div>
         <span className="text-gray-600 text-xs ml-2 flex-shrink-0">{collapsed ? '▼' : '▲'}</span>
@@ -69,9 +70,9 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
 
       {/* Expanded form */}
       {!collapsed && (
-        <div className="px-4 pb-4 grid grid-cols-2 gap-3">
+        <div className="px-4 pb-5 grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Date</label>
+            <label className="block text-xs text-gray-500 mb-1.5">Date</label>
             <input
               type="date"
               value={values.date}
@@ -80,7 +81,7 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Week</label>
+            <label className="block text-xs text-gray-500 mb-1.5">Week</label>
             <input
               type="number"
               value={values.week}
@@ -88,12 +89,13 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
               placeholder="—"
               min="1"
               max="100"
+              inputMode="numeric"
               className={inputCls}
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Domain</label>
+            <label className="block text-xs text-gray-500 mb-1.5">Domain</label>
             <select
               value={values.domain}
               onChange={(e) => onChange({ domain: e.target.value as Domain })}
@@ -105,7 +107,7 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Equipment</label>
+            <label className="block text-xs text-gray-500 mb-1.5">Equipment</label>
             <select
               value={values.equipment}
               onChange={(e) => onChange({ equipment: e.target.value as Equipment })}
@@ -118,7 +120,7 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
           </div>
 
           <div className="col-span-2">
-            <label className="block text-xs text-gray-500 mb-1">Day Status</label>
+            <label className="block text-xs text-gray-500 mb-1.5">Day Status</label>
             <div className="flex gap-2">
               {DAY_STATUSES.map((s) => (
                 <button
@@ -127,10 +129,10 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
                   onClick={() =>
                     onChange({ dayStatus: s, ...(s === 'Full' && { cause: '' }) })
                   }
-                  className={`flex-1 py-1.5 rounded text-xs transition-colors ${
+                  className={`flex-1 h-10 rounded-lg text-xs transition-colors ${
                     values.dayStatus === s
                       ? 'bg-blue-700 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 active:bg-gray-600'
                   }`}
                 >
                   {STATUS_LABEL[s]}
@@ -141,17 +143,17 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
 
           {values.dayStatus !== 'Full' && (
             <div className="col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Cause</label>
+              <label className="block text-xs text-gray-500 mb-1.5">Cause</label>
               <div className="flex gap-2 flex-wrap">
                 {CAUSES.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => onChange({ cause: values.cause === c ? '' : c })}
-                    className={`px-3 py-1 rounded text-xs transition-colors ${
+                    className={`h-9 px-4 rounded-lg text-xs transition-colors ${
                       values.cause === c
                         ? 'bg-blue-700 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 active:bg-gray-600'
                     }`}
                   >
                     {c}
@@ -162,7 +164,7 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
           )}
 
           <div className="col-span-2">
-            <label className="block text-xs text-gray-500 mb-1">Fatigue (optional)</label>
+            <label className="block text-xs text-gray-500 mb-1.5">Fatigue (optional)</label>
             <div className="flex gap-2 items-center">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
@@ -171,10 +173,10 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
                   onClick={() =>
                     onChange({ fatigue: values.fatigue === String(n) ? '' : String(n) })
                   }
-                  className={`w-9 h-9 rounded text-sm transition-colors ${
+                  className={`w-11 h-11 rounded-lg text-sm transition-colors ${
                     values.fatigue === String(n)
                       ? 'bg-blue-700 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 active:bg-gray-600'
                   }`}
                 >
                   {n}
@@ -184,7 +186,7 @@ export default function SessionHeader({ values, onChange, collapsed, onToggle }:
                 <button
                   type="button"
                   onClick={() => onChange({ fatigue: '' })}
-                  className="text-xs text-gray-600 hover:text-gray-400 ml-1"
+                  className="text-xs text-gray-600 hover:text-gray-400 ml-1 px-2 h-11 flex items-center"
                 >
                   clear
                 </button>
