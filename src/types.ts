@@ -28,25 +28,29 @@ export type Unit =
   | 'reps_per_leg'
   | 'none';
 
+export type EntrySource = 'local' | 'notion';
+
 export interface ExerciseSet {
   id?: number;
   clientId: string;
-  syncedAt: number;     // 0 = pending sync, timestamp = synced
+  syncedAt: number;       // 0 = pending sync, timestamp = synced
   notionPageId?: string;
+  source?: EntrySource;   // 'local' = logged in app, 'notion' = imported from history
 
-  date: string;         // YYYY-MM-DD
+  date: string;           // YYYY-MM-DD
   week?: number;
-  domain: Domain;
-  equipment: Equipment;
-  dayStatus: DayStatus;
+  domain?: Domain;        // optional: historical rows may not have this
+  equipment?: Equipment;  // optional: historical rows may not have this
+  dayStatus?: DayStatus;  // optional: historical rows may not have this
   cause?: Cause;
-  fatigue?: number;     // 1–5
+  fatigue?: number;       // 1–5
 
   exercise: string;
   category: Category;
   set?: number;
   value?: number;
   unit?: Unit;
+  detail?: string;        // raw Notion Detail field, e.g. "2x8" — historical rows only
   notes?: string;
 }
 

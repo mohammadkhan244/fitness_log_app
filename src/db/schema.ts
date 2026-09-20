@@ -13,6 +13,12 @@ class FitnessDB extends Dexie {
       exercises: '++id, &name',
       meta: 'key',
     });
+    // v2 adds notionPageId and source indexes (no data migration needed)
+    this.version(2).stores({
+      sets: '++id, clientId, syncedAt, date, notionPageId, source',
+      exercises: '++id, &name',
+      meta: 'key',
+    });
   }
 }
 
