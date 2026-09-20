@@ -35,6 +35,10 @@ export default function ConsistencyGrid({ weeks, totalWeeks = 65 }: Props) {
           </span>
         ))}
         <span className="flex items-center gap-1.5 text-xs text-gray-400">
+          <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: '#4b5563' }} />
+          Mixed/unknown
+        </span>
+        <span className="flex items-center gap-1.5 text-xs text-gray-400">
           <span className="w-3 h-3 rounded-sm inline-block bg-gray-800 border border-gray-700" />
           No data
         </span>
@@ -55,8 +59,8 @@ export default function ConsistencyGrid({ weeks, totalWeeks = 65 }: Props) {
               title={w ? buildTooltip(wk, w) : `Week ${wk}: no data`}
               className="aspect-square rounded-sm"
               style={
-                color
-                  ? { backgroundColor: color, opacity: 0.3 + intensity * 0.7 }
+                w
+                  ? { backgroundColor: color ?? '#4b5563', opacity: 0.3 + intensity * 0.7 }
                   : { backgroundColor: '#1f2937' }
               }
             />

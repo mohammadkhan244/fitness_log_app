@@ -52,7 +52,8 @@ export function useSync(): SyncState {
       const count = await importFromNotion((done) => {
         setImportProgress(`Fetching page ${done}…`);
       });
-      setImportProgress(null);
+      setImportProgress(`Done — ${count} new entries imported`);
+      setTimeout(() => setImportProgress(null), 4000);
       if (count > 0) setLastSync(Date.now());
     } catch (e) {
       setError(`Import failed: ${e instanceof Error ? e.message : String(e)}`);

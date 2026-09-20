@@ -19,7 +19,9 @@ interface UseDecisionsResult {
   refresh: () => void;
 }
 
-function parseDecisions(results: Array<{ id: string; properties: Record<string, unknown> }>): Decision[] {
+function parseDecisions(
+  results: Array<{ id: string; properties: Record<string, unknown> }>,
+): Decision[] {
   return results.map((page) => {
     const pr = page.properties;
     const titleProp = pr['Decision'] as { title?: Array<{ plain_text: string }> } | null;
@@ -40,9 +42,11 @@ function parseDecisions(results: Array<{ id: string; properties: Record<string, 
 }
 
 async function findDecisionsDbId(): Promise<string | null> {
+  // Check cache first
   const cached = await db.meta.get('decisionsDbId');
   if (cached) return cached.value;
 
+  // Notion 2025-09-03: search filter values are "page" | "data_source"
   const res = await notionProxy<{
     results: Array<{
       id: string;
@@ -52,11 +56,16 @@ async function findDecisionsDbId(): Promise<string | null> {
   }>({
     path: 'search',
     method: 'POST',
-    body: { query: 'Decisions', filter: { value: 'database', property: 'object' } },
+    body: {
+      query: 'Decisions',
+      filter: { value: 'data_source', property: 'object', in_trash: false },
+    },
   });
 
   const found = res.results.find(
-    (r) => r.object === 'database' && r.title?.[0]?.plain_text === 'Decisions',
+    (r) =>
+      (r.object === 'data_source' || r.object === 'database') &&
+      r.title?.[0]?.plain_text === 'Decisions',
   );
   if (!found) return null;
 
@@ -64,11 +73,12 @@ async function findDecisionsDbId(): Promise<string | null> {
   return found.id;
 }
 
-async function fetchDecisions(dbId: string): Promise<Decision[]> {
+async function fetchDecisions(dsId: string): Promise<Decision[]> {
+  // Use data_sources query (2025-09-03 API)
   const res = await notionProxy<{
     results: Array<{ id: string; properties: Record<string, unknown> }>;
   }>({
-    path: `databases/${dbId}/query`,
+    path: `data_sources/${dsId}/query`,
     method: 'POST',
     body: {},
   });
@@ -93,18 +103,27 @@ export function useDecisions(): UseDecisionsResult {
 
     (async () => {
       try {
-        const dbId = await findDecisionsDbId();
-        if (!dbId) throw new Error('Decisions database not found — run npm run migrate first');
-        const all = await fetchDecisions(dbId);
+        // Clear stale cache if previous fetch failed
+        const dsId = await findDecisionsDbId();
+        if (!dsId) {
+          throw new Error(
+            'Decisions database not found in Notion — run npm run migrate first, then add decisions in Notion',
+          );
+        }
+        const all = await fetchDecisions(dsId);
         if (!cancelled) setDecisions(all);
       } catch (e) {
+        // Clear cached ID on error so next attempt re-searches
+        void db.meta.delete('decisionsDbId');
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load decisions');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [tick]);
 
   const markStatus = async (id: string, status: 'Confirmed' | 'Changed') => {

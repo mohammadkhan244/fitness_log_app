@@ -33,7 +33,10 @@ export default function SyncStatus({
   if (offline) {
     label = 'Offline — will sync on reconnect';
   } else if (importing) {
-    label = <span className="text-blue-400">Importing history: {importProgress}</span>;
+    label = <span className="text-blue-300">{importProgress ?? 'Importing history…'}</span>;
+  } else if (importProgress) {
+    // Show completion message (fades out after 4s via timeout in useSync)
+    label = <span className="text-blue-300">{importProgress}</span>;
   } else if (syncing) {
     label = `Syncing${pendingCount > 0 ? ` ${pendingCount} pending` : ''}…`;
   } else if (error) {
@@ -53,18 +56,19 @@ export default function SyncStatus({
       <span className="flex-1 truncate">{label}</span>
 
       {!syncing && !importing && !offline && (
-        <div className="flex gap-3 flex-shrink-0">
+        <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={() => void triggerImport()}
-            className="text-gray-600 hover:text-gray-300 underline"
+            className="px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+            title="Pull all Notion history into local DB"
           >
-            Re-import
+            ↓ Import
           </button>
           <button
             onClick={() => void sync()}
-            className="text-gray-600 hover:text-gray-300 underline"
+            className="px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
           >
-            Sync
+            ↑ Sync
           </button>
         </div>
       )}
