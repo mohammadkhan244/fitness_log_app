@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
-import { buildBackupJson, buildWeekMarkdown, currentWeek, syncInboxPending } from '../db/inbox';
+import { buildBackupJson, buildWeekMarkdown, currentWeek, exportWeekToNotion } from '../db/inbox';
 import type { InboxType } from '../types';
 
 const TYPES: InboxType[] = ['Thought', 'Link', 'Quote'];
@@ -16,52 +16,49 @@ export default function InboxScreen() {
   const [type, setType] = useState<InboxType>('Thought');
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [copyLabel, setCopyLabel] = useState('Copy week digest');
+  const [notionStatus, setNotionStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [copyLabel, setCopyLabel] = useState('Copy digest');
   const [exportMsg, setExportMsg] = useState('');
 
   const week = currentWeek();
-  const entries = useLiveQuery(
-    () => db.inbox.orderBy('createdAt').reverse().limit(30).toArray(),
-    [],
-  ) ?? [];
-  const pendingCount = useLiveQuery(
-    () => db.inbox.where('syncedAt').equals(0).count(),
-    [],
-    0,
-  );
+  const entries =
+    useLiveQuery(() => db.inbox.orderBy('createdAt').reverse().limit(30).toArray(), []) ?? [];
 
   async function handleCapture() {
     const text = content.trim();
     if (!text) return;
     setSaving(true);
     try {
-      const isLink = type === 'Link';
       await db.inbox.add({
         clientId: crypto.randomUUID(),
-        syncedAt: 0,
+        syncedAt: Date.now(),
         type,
-        content: isLink ? text : text,
-        url: isLink ? text : undefined,
+        content: text,
+        url: type === 'Link' ? text : undefined,
         date: new Date().toISOString().slice(0, 10),
         week,
         createdAt: Date.now(),
       });
       setContent('');
-      // Fire-and-forget sync
-      void syncInboxPending();
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleSyncInbox() {
-    if (syncing) return;
-    setSyncing(true);
+  async function handleExportNotion() {
+    if (notionStatus === 'loading') return;
+    setNotionStatus('loading');
     try {
-      await syncInboxPending();
-    } finally {
-      setSyncing(false);
+      const url = await exportWeekToNotion(week);
+      setNotionStatus('done');
+      setExportMsg(`Exported — open in Notion`);
+      // Open the created page
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => { setNotionStatus('idle'); setExportMsg(''); }, 4000);
+    } catch (err) {
+      setNotionStatus('error');
+      setExportMsg(err instanceof Error ? err.message : 'Export failed');
+      setTimeout(() => { setNotionStatus('idle'); setExportMsg(''); }, 4000);
     }
   }
 
@@ -69,7 +66,7 @@ export default function InboxScreen() {
     const md = await buildWeekMarkdown(week);
     await navigator.clipboard.writeText(md);
     setCopyLabel('Copied!');
-    setTimeout(() => setCopyLabel('Copy week digest'), 2500);
+    setTimeout(() => setCopyLabel('Copy digest'), 2500);
   }
 
   async function handleDownloadBackup() {
@@ -81,18 +78,12 @@ export default function InboxScreen() {
     a.download = `fitness-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    setExportMsg('Backup downloaded');
-    setTimeout(() => setExportMsg(''), 3000);
   }
-
-  const isLink = type === 'Link';
-  const canCapture = content.trim().length > 0;
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-5">
       {/* Capture form */}
       <div className="space-y-3">
-        {/* Type selector */}
         <div className="flex gap-2">
           {TYPES.map((t) => (
             <button
@@ -109,8 +100,7 @@ export default function InboxScreen() {
           ))}
         </div>
 
-        {/* Content input */}
-        {isLink ? (
+        {type === 'Link' ? (
           <input
             type="url"
             value={content}
@@ -132,7 +122,7 @@ export default function InboxScreen() {
 
         <button
           onClick={() => void handleCapture()}
-          disabled={saving || !canCapture}
+          disabled={saving || content.trim().length === 0}
           className="w-full h-11 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 rounded-xl text-sm font-semibold text-white transition-colors"
         >
           {saving ? 'Saving…' : `Capture ${EMOJI[type]}`}
@@ -141,37 +131,46 @@ export default function InboxScreen() {
 
       {/* Export row */}
       <div className="border-t border-gray-800 pt-4 space-y-2">
-        <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">Export</p>
+        <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">Week {week} export</p>
+        <button
+          onClick={() => void handleExportNotion()}
+          disabled={notionStatus === 'loading'}
+          className={`w-full h-11 rounded-xl text-sm font-semibold transition-colors ${
+            notionStatus === 'done'
+              ? 'bg-green-700 text-white'
+              : notionStatus === 'error'
+              ? 'bg-red-900 text-red-200'
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-100 disabled:opacity-50'
+          }`}
+        >
+          {notionStatus === 'loading'
+            ? 'Creating Notion page…'
+            : notionStatus === 'done'
+            ? 'Exported to Notion ↗'
+            : notionStatus === 'error'
+            ? 'Export failed'
+            : 'Export week to Notion'}
+        </button>
         <div className="flex gap-2">
           <button
             onClick={() => void handleCopyDigest()}
-            className="flex-1 h-10 bg-gray-800 hover:bg-gray-700 active:bg-gray-700 rounded-xl text-xs font-medium text-gray-300 transition-colors"
+            className="flex-1 h-10 bg-gray-800 hover:bg-gray-700 rounded-xl text-xs font-medium text-gray-300 transition-colors"
           >
             {copyLabel}
           </button>
           <button
             onClick={() => void handleDownloadBackup()}
-            className="flex-1 h-10 bg-gray-800 hover:bg-gray-700 active:bg-gray-700 rounded-xl text-xs font-medium text-gray-300 transition-colors"
+            className="flex-1 h-10 bg-gray-800 hover:bg-gray-700 rounded-xl text-xs font-medium text-gray-300 transition-colors"
           >
             Download backup
           </button>
         </div>
-        {exportMsg && <p className="text-xs text-green-400">{exportMsg}</p>}
+        {exportMsg && (
+          <p className={`text-xs ${notionStatus === 'error' ? 'text-red-400' : 'text-green-400'}`}>
+            {exportMsg}
+          </p>
+        )}
       </div>
-
-      {/* Sync button if pending */}
-      {(pendingCount ?? 0) > 0 && (
-        <div className="flex items-center justify-between bg-gray-900 rounded-xl px-4 py-2.5">
-          <span className="text-xs text-gray-400">{pendingCount} capture{pendingCount !== 1 ? 's' : ''} pending Notion sync</span>
-          <button
-            onClick={() => void handleSyncInbox()}
-            disabled={syncing}
-            className="text-xs text-blue-400 hover:text-blue-300 font-medium disabled:opacity-50"
-          >
-            {syncing ? 'Syncing…' : 'Sync now ↑'}
-          </button>
-        </div>
-      )}
 
       {/* Recent captures */}
       {entries.length > 0 && (
@@ -189,9 +188,6 @@ export default function InboxScreen() {
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-xs text-gray-600">W{e.week}</span>
                     <span className="text-xs text-gray-700">{e.date}</span>
-                    {e.syncedAt === 0 && (
-                      <span className="text-xs text-amber-600">pending sync</span>
-                    )}
                   </div>
                 </div>
               </div>
