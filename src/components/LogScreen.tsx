@@ -36,14 +36,14 @@ function loadSession(): SessionValues {
   return defaultSession();
 }
 
-function newRow(set: number, from?: RowState): RowState {
+function newRow(): RowState {
   return {
     key: crypto.randomUUID(),
-    exercise: from?.exercise ?? '',
-    category: from?.category ?? '',
-    set,
-    value: '',
-    unit: from?.unit ?? '',
+    exercise: '',
+    category: '',
+    sets: 3,
+    reps: '',
+    unit: 'reps',
     notes: '',
   };
 }
@@ -56,7 +56,7 @@ interface Props {
 
 export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) {
   const [session, setSession] = useState<SessionValues>(loadSession);
-  const [rows, setRows] = useState<RowState[]>(() => [newRow(1)]);
+  const [rows, setRows] = useState<RowState[]>(() => [newRow()]);
   const [headerOpen, setHeaderOpen] = useState(false);
   const { names: exerciseNames } = useExercises();
 
@@ -68,16 +68,6 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
       }
       try { localStorage.setItem('session-meta', JSON.stringify(next)); } catch { /* ignore */ }
       return next;
-    });
-  }
-
-  function repeatRow(index: number) {
-    const row = rows[index];
-    const next = newRow(row.set + 1, row);
-    setRows((prev) => {
-      const updated = [...prev];
-      updated.splice(index + 1, 0, next);
-      return updated;
     });
   }
 
@@ -98,9 +88,7 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
 
     onSavingChange(true, '');
     try {
-      const entries: Omit<ExerciseSet, 'id'>[] = valid.map((r) => ({
-        clientId: crypto.randomUUID(),
-        syncedAt: 0,
+      const base = {
         date: session.date,
         week: session.week ? Number(session.week) : undefined,
         domain: session.domain as Domain,
@@ -108,17 +96,31 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
         dayStatus: session.dayStatus as DayStatus,
         cause: (session.cause || undefined) as Cause | undefined,
         fatigue: session.fatigue ? Number(session.fatigue) : undefined,
-        exercise: r.exercise.trim(),
-        category: r.category as Category,
-        set: r.set,
-        value: r.value ? Number(r.value) : undefined,
-        unit: (r.unit || undefined) as Unit | undefined,
-        notes: r.notes || undefined,
-      }));
+      };
+      const entries: Omit<ExerciseSet, 'id'>[] = valid.flatMap((r) =>
+        Array.from({ length: r.sets }, (_, i) => ({
+          ...base,
+          clientId: crypto.randomUUID(),
+          syncedAt: 0,
+          exercise: r.exercise.trim(),
+          category: r.category as Category,
+          set: i + 1,
+          value: r.reps ? Number(r.reps) : undefined,
+          unit: r.unit as Unit,
+          notes: r.notes || undefined,
+        })),
+      );
 
       await db.sets.bulkAdd(entries);
-      setRows([newRow(1)]);
-      onSavingChange(false, `${valid.length} set${valid.length > 1 ? 's' : ''} saved`);
+
+      // Persist any newly typed exercise names to the local autocomplete cache
+      const uniqueNames = [...new Set(valid.map((r) => r.exercise.trim()))];
+      for (const name of uniqueNames) {
+        try { await db.exercises.add({ name }); } catch { /* already exists */ }
+      }
+
+      setRows([newRow()]);
+      onSavingChange(false, `${entries.length} set${entries.length > 1 ? 's' : ''} saved`);
       void sync();
     } catch (err) {
       onSavingChange(false, 'Save failed');
@@ -147,7 +149,6 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
             row={row}
             exerciseNames={exerciseNames}
             onChange={(patch) => updateRow(row.key, patch)}
-            onRepeat={() => repeatRow(i)}
             onRemove={() => removeRow(row.key)}
             autoFocus={i === rows.length - 1 && row.exercise === ''}
           />
@@ -155,10 +156,7 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
 
         <button
           type="button"
-          onClick={() => {
-            const last = rows[rows.length - 1];
-            setRows((prev) => [...prev, newRow((last?.set ?? 0) + 1)]);
-          }}
+          onClick={() => setRows((prev) => [...prev, newRow()])}
           className="w-full h-11 border border-dashed border-gray-700 rounded-xl text-sm text-gray-500 hover:text-gray-300 hover:border-gray-600 active:bg-gray-900 transition-colors"
         >
           + Add exercise

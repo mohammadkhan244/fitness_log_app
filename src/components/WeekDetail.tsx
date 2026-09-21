@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
 import type { ExerciseSet } from '../types';
@@ -23,27 +24,22 @@ function computedWeek(date: string): number {
 }
 
 const UNIT_SHORT: Record<string, string> = {
-  seconds: 's',
-  lbs: 'lbs',
-  reps_total: 'reps',
-  reps: 'reps',
-  reps_per_leg: 'reps/leg',
-  none: '',
+  seconds: 's', lbs: 'lbs', reps_total: 'reps', reps: 'reps', reps_per_leg: 'reps/leg', none: '',
 };
 
 export default function WeekDetail({ week, onClose }: Props) {
   const [start, end] = weekDateRange(week);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [pendingDate, setPendingDate] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  // Full-table scan so we catch entries regardless of whether they have
-  // an explicit week field, a date in range, or just a computed-week match.
-  // The dataset is small enough (<10k rows) that this is effectively instant.
   const allEntries = useLiveQuery(async () => {
     const all = await db.sets.toArray();
     const matched = all.filter(
       (s) =>
-        s.week === week ||               // Notion-imported week field
-        (s.date >= start && s.date < end) || // date falls in computed range
-        computedWeek(s.date) === week,       // computed week matches
+        s.week === week ||
+        (s.date >= start && s.date < end) ||
+        computedWeek(s.date) === week,
     );
     return matched.sort((a, b) => a.date.localeCompare(b.date));
   }, [week]);
@@ -53,6 +49,23 @@ export default function WeekDetail({ week, onClose }: Props) {
     const arr = byDate.get(e.date) ?? [];
     arr.push(e);
     byDate.set(e.date, arr);
+  }
+
+  async function handleMoveDate(dayEntries: ExerciseSet[], newDate: string) {
+    if (!newDate || newDate === dayEntries[0]?.date) {
+      setEditingDate(null);
+      return;
+    }
+    setSaving(true);
+    const newWeek = computedWeek(newDate);
+    try {
+      await Promise.all(
+        dayEntries.map((e) => db.sets.update(e.id!, { date: newDate, week: newWeek })),
+      );
+    } finally {
+      setSaving(false);
+      setEditingDate(null);
+    }
   }
 
   const totalSets = allEntries?.length ?? 0;
@@ -87,23 +100,57 @@ export default function WeekDetail({ week, onClose }: Props) {
         {!allEntries ? (
           <div className="p-4 text-xs text-gray-600 text-center">Loading…</div>
         ) : allEntries.length === 0 ? (
-          <div className="p-4 text-xs text-gray-600 text-center">
-            No entries found for week {week}.
-          </div>
+          <div className="p-4 text-xs text-gray-600 text-center">No entries found for week {week}.</div>
         ) : (
           <div className="px-4 pb-6 space-y-4">
             {Array.from(byDate.entries()).map(([date, dayEntries]) => (
               <div key={date}>
-                <div className="text-xs text-gray-500 font-medium mb-2 sticky top-0 bg-gray-900 py-1">
-                  {new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                  {dayEntries[0]?.domain && (
-                    <span className="ml-2 text-gray-600">· {dayEntries[0].domain}</span>
+                {/* Day header */}
+                <div className="sticky top-0 bg-gray-900 py-1 mb-2 flex items-center justify-between">
+                  {editingDate === date ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="date"
+                        defaultValue={date}
+                        onChange={(e) => setPendingDate(e.target.value)}
+                        className="bg-gray-800 border border-gray-700 rounded-lg px-2 h-8 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        onClick={() => void handleMoveDate(dayEntries, pendingDate || date)}
+                        disabled={saving}
+                        className="text-xs text-blue-400 hover:text-blue-300 font-medium disabled:opacity-50"
+                      >
+                        {saving ? 'Moving…' : 'Move'}
+                      </button>
+                      <button
+                        onClick={() => setEditingDate(null)}
+                        className="text-xs text-gray-500 hover:text-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-xs text-gray-500 font-medium">
+                        {new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
+                          weekday: 'short', month: 'short', day: 'numeric',
+                        })}
+                        {dayEntries[0]?.domain && (
+                          <span className="ml-2 text-gray-600">· {dayEntries[0].domain}</span>
+                        )}
+                      </span>
+                      <button
+                        onClick={() => { setEditingDate(date); setPendingDate(date); }}
+                        className="text-gray-600 hover:text-gray-300 text-xs px-2 py-0.5 rounded transition-colors"
+                        title="Fix date"
+                      >
+                        ✎
+                      </button>
+                    </>
                   )}
                 </div>
+
+                {/* Entries */}
                 <div className="space-y-1">
                   {dayEntries.map((e) => (
                     <div key={e.id} className="flex items-center gap-2 text-sm py-1 border-b border-gray-800/50">

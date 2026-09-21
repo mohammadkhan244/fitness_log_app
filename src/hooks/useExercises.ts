@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { notionProxy } from '../api/proxy';
 import { db } from '../db/schema';
 
@@ -6,27 +7,24 @@ const DS_ID = import.meta.env.VITE_WORKOUT_LOG_DATA_SOURCE_ID as string;
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 export function useExercises(): { names: string[]; refreshing: boolean } {
-  const [names, setNames] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Reactive — updates immediately when any exercise is added to the DB
+  const exercises = useLiveQuery(() => db.exercises.toArray(), []) ?? [];
+  const names = exercises.map((e) => e.name).sort();
+
   useEffect(() => {
-    void load();
+    void refresh();
   }, []);
 
-  async function load() {
-    const cached = await db.exercises.toArray();
-    if (cached.length > 0) {
-      setNames(cached.map((e) => e.name).sort());
-    }
-
+  async function refresh() {
+    // If cache is empty, populate from DB first so autocomplete isn't blank
     const meta = await db.meta.get('exercisesCachedAt');
     const stale = !meta || Date.now() - Number(meta.value) > CACHE_TTL;
     if (stale && navigator.onLine) {
       setRefreshing(true);
       try {
         await fetchAndCache();
-        const fresh = await db.exercises.toArray();
-        setNames(fresh.map((e) => e.name).sort());
       } catch (err) {
         console.error('[exercises] cache refresh failed:', err);
       } finally {
