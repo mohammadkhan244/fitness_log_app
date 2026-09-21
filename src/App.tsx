@@ -1,33 +1,39 @@
 import { useRef, useState } from 'react';
 import DashboardScreen from './components/DashboardScreen';
+import InboxScreen from './components/InboxScreen';
 import LogScreen from './components/LogScreen';
 import SyncStatus from './components/SyncStatus';
 import { useSync } from './hooks/useSync';
 
-type Tab = 'log' | 'dashboard';
+type Tab = 'log' | 'dashboard' | 'inbox';
 
 export default function App() {
   const syncState = useSync();
   const [tab, setTab] = useState<Tab>('log');
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
-
-  // LogScreen registers its save function here each render
   const logSaveTrigger = useRef<() => void>(() => {});
+
+  // On the log tab the bottom bar is taller (save row + tab row)
+  const bottomBarHeight = tab === 'log' ? '7rem' : '3rem';
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
       <SyncStatus {...syncState} />
 
-      {/* Scrollable content — pb accounts for bottom bar height */}
-      <div className="flex-1 overflow-auto" style={{ paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
-        {tab === 'log'
-          ? <LogScreen
-              sync={syncState.sync}
-              saveTrigger={logSaveTrigger}
-              onSavingChange={(s, m) => { setSaving(s); setSaveMsg(m); }}
-            />
-          : <DashboardScreen />}
+      <div
+        className="flex-1 overflow-auto"
+        style={{ paddingBottom: `calc(${bottomBarHeight} + env(safe-area-inset-bottom, 0px))` }}
+      >
+        {tab === 'log' && (
+          <LogScreen
+            sync={syncState.sync}
+            saveTrigger={logSaveTrigger}
+            onSavingChange={(s, m) => { setSaving(s); setSaveMsg(m); }}
+          />
+        )}
+        {tab === 'dashboard' && <DashboardScreen />}
+        {tab === 'inbox' && <InboxScreen />}
       </div>
 
       {/* Unified bottom bar */}
@@ -35,7 +41,7 @@ export default function App() {
         className="fixed bottom-0 inset-x-0 z-20 bg-gray-900 border-t border-gray-800"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        {/* Save row — only on Log tab */}
+        {/* Save row — log tab only */}
         {tab === 'log' && (
           <div className="px-4 pt-2 pb-1">
             <button
@@ -54,18 +60,23 @@ export default function App() {
 
         {/* Tab row */}
         <div className="flex h-12">
-          <button
-            onClick={() => setTab('log')}
-            className={`flex-1 text-sm font-medium transition-colors ${tab === 'log' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            Log
-          </button>
-          <button
-            onClick={() => setTab('dashboard')}
-            className={`flex-1 text-sm font-medium transition-colors ${tab === 'dashboard' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            Dashboard
-          </button>
+          {(
+            [
+              { id: 'log', label: 'Log' },
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'inbox', label: 'Inbox' },
+            ] as { id: Tab; label: string }[]
+          ).map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`flex-1 text-sm font-medium transition-colors ${
+                tab === id ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
     </div>

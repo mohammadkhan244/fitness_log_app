@@ -69,3 +69,18 @@ export interface ExerciseAlias {
   alias: string;      // alternate name, e.g. "BSS" or "Dips"
   canonical: string;  // preferred name, e.g. "Bulgarian Split Squat" or "Tricep Dips"
 }
+
+export type InboxType = 'Thought' | 'Link' | 'Quote';
+
+export interface InboxEntry {
+  id?: number;
+  clientId: string;
+  syncedAt: number;       // 0 = pending sync
+  notionPageId?: string;
+  type: InboxType;
+  content: string;
+  url?: string;
+  date: string;           // YYYY-MM-DD
+  week: number;
+  createdAt: number;      // Date.now()
+}
