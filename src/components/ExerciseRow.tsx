@@ -23,7 +23,14 @@ interface Props {
 const CATEGORIES: Category[] = [
   'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General',
 ];
-const UNITS: Unit[] = ['reps', 'reps_total', 'reps_per_leg', 'lbs', 'seconds', 'none'];
+const UNITS: { value: Unit; label: string }[] = [
+  { value: 'reps',        label: 'reps'  },
+  { value: 'reps_total',  label: 'total' },
+  { value: 'reps_per_leg',label: '/leg'  },
+  { value: 'lbs',         label: 'lbs'   },
+  { value: 'seconds',     label: 'sec'   },
+  { value: 'none',        label: '—'     },
+];
 
 // 16px font prevents iOS auto-zoom on focus; h-11 = 44px touch target
 const fieldCls =
@@ -52,7 +59,7 @@ export default function ExerciseRow({
         <select
           value={row.category}
           onChange={(e) => onChange({ category: e.target.value as Category })}
-          className={`w-36 ${fieldCls}`}
+          className={`w-32 flex-shrink-0 ${fieldCls}`}
         >
           <option value="">Category</option>
           {CATEGORIES.map((c) => (
@@ -70,7 +77,7 @@ export default function ExerciseRow({
             value={row.set}
             onChange={(e) => onChange({ set: Number(e.target.value) })}
             min="1"
-            className={`w-14 text-center ${fieldCls}`}
+            className={`w-12 text-center flex-shrink-0 ${fieldCls}`}
           />
         </div>
         <input
@@ -80,16 +87,16 @@ export default function ExerciseRow({
           placeholder="Value"
           step="any"
           inputMode="decimal"
-          className={`flex-1 ${fieldCls}`}
+          className={`flex-1 min-w-0 ${fieldCls}`}
         />
         <select
           value={row.unit}
           onChange={(e) => onChange({ unit: e.target.value as Unit })}
-          className={`w-28 ${fieldCls}`}
+          className={`w-[4.5rem] flex-shrink-0 ${fieldCls}`}
         >
-          <option value="">Unit</option>
-          {UNITS.map((u) => (
-            <option key={u}>{u}</option>
+          <option value="">unit</option>
+          {UNITS.map(({ value, label }) => (
+            <option key={value} value={value}>{label}</option>
           ))}
         </select>
       </div>
