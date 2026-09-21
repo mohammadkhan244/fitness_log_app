@@ -1,10 +1,12 @@
 export type Domain = 'Gym' | 'Home' | 'Hotel' | 'Outdoor';
 export type Equipment =
   | 'Bodyweight'
-  | 'Dumbbell/KB'
+  | 'Dumbbell'
+  | 'Kettlebell'
+  | 'Sandbag'
+  | 'Weighted Backpack'
   | 'Machine/Cable'
   | 'Barbell'
-  | 'Sandbag/Improvised'
   | 'None';
 export type DayStatus =
   | 'Full'

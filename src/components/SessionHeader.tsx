@@ -19,7 +19,7 @@ interface Props {
 
 const DOMAINS: Domain[] = ['Gym', 'Home', 'Hotel', 'Outdoor'];
 const EQUIPMENTS: Equipment[] = [
-  'Bodyweight', 'Dumbbell/KB', 'Machine/Cable', 'Barbell', 'Sandbag/Improvised', 'None',
+  'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',
 ];
 const DAY_STATUSES: DayStatus[] = ['Full', 'Reduced', 'Chaos-absorption', 'Rest-on-signal'];
 const CAUSES: Cause[] = ['Work', 'Sleep', 'Travel', 'Signal', 'Other'];
