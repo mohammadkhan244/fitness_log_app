@@ -13,15 +13,20 @@ export default function BodyMap({ data }: Props) {
 
   const { muscleSets, muscleExercises, unmapped } = data;
   const maxSets = Math.max(1, ...Array.from(muscleSets.values()));
+  const totalMuscleSets = Math.max(1, Array.from(muscleSets.values()).reduce((a, b) => a + b, 0));
+
+  function pct(muscle: Muscle): number {
+    const count = muscleSets.get(muscle) ?? 0;
+    return count > 0 ? Math.round((count / totalMuscleSets) * 100) : 0;
+  }
 
   function fill(muscle: Muscle): string {
     const count = muscleSets.get(muscle) ?? 0;
     if (count === 0) return '#1f2937';
     const t = Math.min(1, count / maxSets);
-    // Amber gradient: low=dim, high=bright
-    const r = Math.round(161 + t * 84);   // 161→245
-    const g = Math.round(81 + t * 77);    // 81→158
-    const b = Math.round(8 + t * 3);      // 8→11
+    const r = Math.round(161 + t * 84);
+    const g = Math.round(81 + t * 77);
+    const b = Math.round(8 + t * 3);
     return `rgb(${r},${g},${b})`;
   }
 
@@ -43,6 +48,17 @@ export default function BodyMap({ data }: Props) {
       },
       onClick: () => setSelected(selected === muscle ? null : muscle),
     };
+  }
+
+  // Render a % label; returns null if muscle has 0 sets
+  function PctLabel({ muscle, x, y, fs = 5 }: { muscle: Muscle; x: number; y: number; fs?: number }) {
+    const p = pct(muscle);
+    if (p === 0) return null;
+    return (
+      <text x={x} y={y} textAnchor="middle" fill="white" fontSize={fs} fontWeight="700" pointerEvents="none" opacity="0.9">
+        {p}%
+      </text>
+    );
   }
 
   const selectedCount = selected ? (muscleSets.get(selected) ?? 0) : 0;
@@ -97,11 +113,32 @@ export default function BodyMap({ data }: Props) {
               <rect x="36" y="184" width="20" height="38" rx="5" {...regionProps('Calves')} />
               <rect x="64" y="184" width="20" height="38" rx="5" {...regionProps('Calves')} />
 
-              {/* Labels */}
-              <text x="60" y="59" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="600" pointerEvents="none">Chest</text>
-              <text x="60" y="96" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="600" pointerEvents="none">Core</text>
-              <text x="50" y="160" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Quad</text>
-              <text x="73" y="160" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Quad</text>
+              {/* ── Labels ── */}
+              {/* Shoulders */}
+              <PctLabel muscle="Shoulders" x={35} y={51} fs={5} />
+              <PctLabel muscle="Shoulders" x={85} y={51} fs={5} />
+              {/* Chest */}
+              <text x="60" y="57" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="600" pointerEvents="none">Chest</text>
+              <PctLabel muscle="Chest" x={60} y={65} fs={5.5} />
+              {/* Biceps */}
+              <PctLabel muscle="Biceps" x={28} y={76} fs={5} />
+              <PctLabel muscle="Biceps" x={91} y={76} fs={5} />
+              {/* Forearms */}
+              <PctLabel muscle="Forearms" x={23} y={107} fs={4.5} />
+              <PctLabel muscle="Forearms" x={96} y={107} fs={4.5} />
+              {/* Core */}
+              <text x="60" y="93" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="600" pointerEvents="none">Core</text>
+              <PctLabel muscle="Core" x={60} y={101} fs={5.5} />
+              {/* Hip Flexors */}
+              <PctLabel muscle="Hip Flexors" x={60} y={123} fs={4.5} />
+              {/* Quads */}
+              <text x="47" y="157" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Quad</text>
+              <PctLabel muscle="Quads" x={47} y={164} fs={5.5} />
+              <text x="73" y="157" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Quad</text>
+              <PctLabel muscle="Quads" x={73} y={164} fs={5.5} />
+              {/* Calves */}
+              <PctLabel muscle="Calves" x={46} y={205} fs={5} />
+              <PctLabel muscle="Calves" x={74} y={205} fs={5} />
             </>}
 
             {view === 'back' && <>
@@ -133,13 +170,39 @@ export default function BodyMap({ data }: Props) {
               <rect x="37" y="198" width="20" height="34" rx="5" {...regionProps('Calves')} />
               <rect x="63" y="198" width="20" height="34" rx="5" {...regionProps('Calves')} />
 
-              {/* Labels */}
-              <text x="60" y="52" textAnchor="middle" fill="white" fontSize="6" fontWeight="600" pointerEvents="none">Traps</text>
-              <text x="60" y="80" textAnchor="middle" fill="white" fontSize="6" fontWeight="600" pointerEvents="none">Upper</text>
-              <text x="60" y="87" textAnchor="middle" fill="white" fontSize="6" fontWeight="600" pointerEvents="none">Back</text>
-              <text x="60" y="107" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Lower Back</text>
-              <text x="50" y="136" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Glute</text>
-              <text x="72" y="136" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Glute</text>
+              {/* ── Labels ── */}
+              {/* Rear Delts */}
+              <PctLabel muscle="Rear Delts" x={35} y={51} fs={5} />
+              <PctLabel muscle="Rear Delts" x={85} y={51} fs={5} />
+              {/* Traps */}
+              <text x="60" y="50" textAnchor="middle" fill="white" fontSize="6" fontWeight="600" pointerEvents="none">Traps</text>
+              <PctLabel muscle="Traps" x={60} y={57} fs={5.5} />
+              {/* Upper Back */}
+              <text x="60" y="76" textAnchor="middle" fill="white" fontSize="5.5" fontWeight="600" pointerEvents="none">U.Back</text>
+              <PctLabel muscle="Upper Back" x={60} y={83} fs={5.5} />
+              {/* Lats */}
+              <PctLabel muscle="Lats" x={38} y={84} fs={5} />
+              <PctLabel muscle="Lats" x={82} y={84} fs={5} />
+              {/* Triceps */}
+              <PctLabel muscle="Triceps" x={28} y={76} fs={5} />
+              <PctLabel muscle="Triceps" x={91} y={76} fs={5} />
+              {/* Forearms */}
+              <PctLabel muscle="Forearms" x={23} y={107} fs={4.5} />
+              <PctLabel muscle="Forearms" x={96} y={107} fs={4.5} />
+              {/* Lower Back */}
+              <text x="60" y="104" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Lower Back</text>
+              <PctLabel muscle="Lower Back" x={60} y={111} fs={5.5} />
+              {/* Glutes */}
+              <text x="48" y="131" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Glute</text>
+              <PctLabel muscle="Glutes" x={48} y={138} fs={5.5} />
+              <text x="72" y="131" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Glute</text>
+              <PctLabel muscle="Glutes" x={72} y={138} fs={5.5} />
+              {/* Hamstrings */}
+              <PctLabel muscle="Hamstrings" x={48} y={173} fs={5} />
+              <PctLabel muscle="Hamstrings" x={72} y={173} fs={5} />
+              {/* Calves */}
+              <PctLabel muscle="Calves" x={47} y={217} fs={5} />
+              <PctLabel muscle="Calves" x={73} y={217} fs={5} />
             </>}
           </svg>
         </div>
@@ -150,7 +213,12 @@ export default function BodyMap({ data }: Props) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-amber-400">{selected}</span>
-                <span className="text-xs text-gray-500">{selectedCount} sets</span>
+                <div className="text-right">
+                  <span className="text-xs text-gray-400">{selectedCount} sets</span>
+                  {pct(selected) > 0 && (
+                    <span className="text-xs text-amber-500 ml-2 font-semibold">{pct(selected)}%</span>
+                  )}
+                </div>
               </div>
               {selectedExercises.length === 0 ? (
                 <p className="text-xs text-gray-600">No exercises mapped yet.</p>
