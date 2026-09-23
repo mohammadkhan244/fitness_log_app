@@ -29,10 +29,28 @@ function toNotionPage(e: ExerciseSet): object {
   };
 }
 
-export async function syncPending(): Promise<{ synced: number; failed: number }> {
+export interface SyncFailure {
+  entry: ExerciseSet;
+  message: string;
+}
+
+function parseNotionError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  try {
+    const match = msg.match(/Proxy \d+: (.+)/s);
+    if (match) {
+      const body = JSON.parse(match[1]) as { message?: string };
+      if (body.message) return body.message;
+    }
+  } catch { /* ignore */ }
+  return msg;
+}
+
+export async function syncPending(): Promise<{ synced: number; failed: number; errors: SyncFailure[] }> {
   const pending = await db.sets.where('syncedAt').equals(0).toArray();
   let synced = 0;
   let failed = 0;
+  const errors: SyncFailure[] = [];
 
   for (const entry of pending) {
     try {
@@ -45,13 +63,12 @@ export async function syncPending(): Promise<{ synced: number; failed: number }>
       synced++;
     } catch (err) {
       failed++;
-      console.error('[sync] failed for', entry.clientId, err);
+      errors.push({ entry, message: parseNotionError(err) });
     }
-    // Throttle: ~6 req/sec, safely under the 10/sec Business plan limit
     await new Promise<void>((r) => setTimeout(r, 150));
   }
 
-  return { synced, failed };
+  return { synced, failed, errors };
 }
 
 // ─── Import historical data from Notion ──────────────────────────────────────

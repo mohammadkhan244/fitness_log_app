@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
-import { importFromNotion, syncPending } from '../db/sync';
+import { importFromNotion, syncPending, type SyncFailure } from '../db/sync';
+import type { Equipment } from '../types';
 
 export interface SyncState {
   pendingCount: number;
   syncing: boolean;
   lastSync: number | null;
   error: string | null;
+  failedEntries: SyncFailure[];
   sync: () => Promise<void>;
+  fixEntry: (id: number, equipment: Equipment) => Promise<void>;
   importing: boolean;
   importProgress: string | null;
   triggerImport: () => Promise<void>;
@@ -18,6 +21,7 @@ export function useSync(): SyncState {
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failedEntries, setFailedEntries] = useState<SyncFailure[]>([]);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<string | null>(null);
 
@@ -32,9 +36,12 @@ export function useSync(): SyncState {
     setSyncing(true);
     setError(null);
     try {
-      const { failed } = await syncPending();
+      const { failed, errors } = await syncPending();
+      setFailedEntries(errors);
       if (failed > 0) {
-        setError(`${failed} entr${failed === 1 ? 'y' : 'ies'} failed — will retry next sync`);
+        setError(`${failed} entr${failed === 1 ? 'y' : 'ies'} failed — see below`);
+      } else {
+        setFailedEntries([]);
       }
       setLastSync(Date.now());
     } catch (e) {
@@ -43,6 +50,13 @@ export function useSync(): SyncState {
       setSyncing(false);
     }
   }, [syncing]);
+
+  const fixEntry = useCallback(async (id: number, equipment: Equipment) => {
+    await db.sets.update(id, { equipment });
+    // Remove from failed list optimistically
+    setFailedEntries((prev) => prev.filter((f) => f.entry.id !== id));
+    await sync();
+  }, [sync]);
 
   const triggerImport = useCallback(async () => {
     if (importing || !navigator.onLine) return;
@@ -63,7 +77,6 @@ export function useSync(): SyncState {
     }
   }, [importing]);
 
-  // Auto-import historical data once if not yet done
   useEffect(() => {
     if (!navigator.onLine) return;
     void db.meta.get('notionImportedAt').then((meta) => {
@@ -72,13 +85,11 @@ export function useSync(): SyncState {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync pending on mount
   useEffect(() => {
     if (navigator.onLine) void sync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync on reconnect
   useEffect(() => {
     window.addEventListener('online', sync);
     return () => window.removeEventListener('online', sync);
@@ -89,7 +100,9 @@ export function useSync(): SyncState {
     syncing,
     lastSync,
     error,
+    failedEntries,
     sync,
+    fixEntry,
     importing,
     importProgress,
     triggerImport,

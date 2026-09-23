@@ -1,4 +1,11 @@
+import { useState } from 'react';
 import type { SyncState } from '../hooks/useSync';
+import type { Equipment } from '../types';
+
+const EQUIPMENTS: Equipment[] = [
+  'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack',
+  'Machine/Cable', 'Barbell', 'None',
+];
 
 function ago(ts: number): string {
   const s = Math.round((Date.now() - ts) / 1000);
@@ -8,16 +15,11 @@ function ago(ts: number): string {
 }
 
 export default function SyncStatus({
-  pendingCount,
-  syncing,
-  lastSync,
-  error,
-  sync,
-  importing,
-  importProgress,
-  triggerImport,
+  pendingCount, syncing, lastSync, error, failedEntries,
+  sync, fixEntry, importing, importProgress, triggerImport,
 }: SyncState) {
   const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+  const [fixes, setFixes] = useState<Record<number, Equipment>>({});
 
   const dotColor = offline
     ? 'bg-gray-600'
@@ -35,7 +37,6 @@ export default function SyncStatus({
   } else if (importing) {
     label = <span className="text-blue-300">{importProgress ?? 'Importing history…'}</span>;
   } else if (importProgress) {
-    // Show completion message (fades out after 4s via timeout in useSync)
     label = <span className="text-blue-300">{importProgress}</span>;
   } else if (syncing) {
     label = `Syncing${pendingCount > 0 ? ` ${pendingCount} pending` : ''}…`;
@@ -51,25 +52,80 @@ export default function SyncStatus({
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-gray-900 border-b border-gray-800 text-xs text-gray-400 sticky top-0 z-10">
-      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
-      <span className="flex-1 truncate">{label}</span>
+    <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800">
+      {/* Status bar */}
+      <div className="flex items-center gap-3 px-4 py-2 text-xs text-gray-400">
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+        <span className="flex-1 truncate">{label}</span>
+        {!syncing && !importing && !offline && (
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={() => void triggerImport()}
+              className="px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+            >
+              ↓ Import
+            </button>
+            <button
+              onClick={() => void sync()}
+              className="px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+            >
+              ↑ Sync
+            </button>
+          </div>
+        )}
+      </div>
 
-      {!syncing && !importing && !offline && (
-        <div className="flex gap-2 flex-shrink-0">
-          <button
-            onClick={() => void triggerImport()}
-            className="px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-            title="Pull all Notion history into local DB"
-          >
-            ↓ Import
-          </button>
-          <button
-            onClick={() => void sync()}
-            className="px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-          >
-            ↑ Sync
-          </button>
+      {/* Failed entries panel */}
+      {failedEntries.length > 0 && (
+        <div className="border-t border-red-900/40 bg-gray-950 px-4 py-3 space-y-3">
+          <p className="text-xs font-semibold text-red-400">
+            {failedEntries.length} entr{failedEntries.length === 1 ? 'y' : 'ies'} failed to sync
+          </p>
+          {failedEntries.map(({ entry, message }) => {
+            const id = entry.id!;
+            const selectedEquipment = fixes[id] ?? (entry.equipment as Equipment | undefined);
+            return (
+              <div key={entry.clientId} className="bg-gray-900 rounded-xl p-3 space-y-2">
+                {/* Entry info */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-medium text-gray-200">{entry.exercise}</p>
+                    <p className="text-xs text-gray-500">{entry.date} · set {entry.set ?? '?'}</p>
+                    {entry.equipment && (
+                      <p className="text-xs text-amber-600 mt-0.5">
+                        Equipment stored: <span className="font-medium">{entry.equipment}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notion error */}
+                <p className="text-xs text-red-400 leading-snug break-words">{message}</p>
+
+                {/* Fix equipment */}
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={selectedEquipment ?? ''}
+                    onChange={(e) => setFixes((prev) => ({ ...prev, [id]: e.target.value as Equipment }))}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 h-9 text-xs text-gray-100 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">— fix equipment —</option>
+                    {EQUIPMENTS.map((eq) => <option key={eq} value={eq}>{eq}</option>)}
+                  </select>
+                  <button
+                    onClick={() => {
+                      const eq = fixes[id];
+                      if (eq) void fixEntry(id, eq);
+                    }}
+                    disabled={!fixes[id]}
+                    className="h-9 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-lg text-xs font-medium text-white transition-colors flex-shrink-0"
+                  >
+                    Fix & Sync
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
