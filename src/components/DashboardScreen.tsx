@@ -8,6 +8,7 @@ import FatigueTrends from './charts/FatigueTrends';
 import WeekDetail from './WeekDetail';
 import ProgressTab from './ProgressTab';
 import InsightsTab from './InsightsTab';
+import DailyFocusCard from './DailyFocusCard';
 
 type Section = 'overview' | 'progress' | 'benchmarks' | 'fatigue' | 'body' | 'insights';
 
@@ -64,6 +65,7 @@ export default function DashboardScreen() {
         {/* Overview */}
         {section === 'overview' && !data.loading && data.totalSets > 0 && (
           <div className="space-y-6">
+            <DailyFocusCard bodyMap={bodyMapData} week={data.maxWeek} />
             <div>
               <SectionTitle>65-Week Training Map</SectionTitle>
               <p className="text-xs text-gray-500 mb-3">

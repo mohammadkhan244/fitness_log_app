@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { db } from '../db/schema';
 import { useExercises } from '../hooks/useExercises';
-import type { Category, Cause, DayStatus, Domain, Equipment, ExerciseSet, Unit } from '../types';
+import type { Category, Equipment, ExerciseSet, Unit } from '../types';
 import ExerciseRow, { type RowState } from './ExerciseRow';
 import SessionHeader, { type SessionValues } from './SessionHeader';
 
-// Week 1 = June 23, 2025 (the Monday from which Notion weekly tracking began)
 const PROGRAM_START = new Date('2025-06-23T00:00:00');
 
 function today(): string {
@@ -21,7 +20,7 @@ function weekFromDate(dateStr: string): string {
 
 function defaultSession(): SessionValues {
   const t = today();
-  return { date: t, week: weekFromDate(t), domain: 'Gym', equipment: 'Bodyweight', dayStatus: 'Full', cause: '', fatigue: '' };
+  return { date: t, week: weekFromDate(t) };
 }
 
 function loadSession(): SessionValues {
@@ -41,6 +40,7 @@ function newRow(): RowState {
     key: crypto.randomUUID(),
     exercise: '',
     category: '',
+    equipment: 'Bodyweight',
     sets: 3,
     reps: '',
     unit: 'reps',
@@ -57,7 +57,6 @@ interface Props {
 export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) {
   const [session, setSession] = useState<SessionValues>(loadSession);
   const [rows, setRows] = useState<RowState[]>(() => [newRow()]);
-  const [headerOpen, setHeaderOpen] = useState(false);
   const { names: exerciseNames } = useExercises();
 
   function updateSession(patch: Partial<SessionValues>) {
@@ -91,11 +90,6 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
       const base = {
         date: session.date,
         week: session.week ? Number(session.week) : undefined,
-        domain: session.domain as Domain,
-        equipment: session.equipment as Equipment,
-        dayStatus: session.dayStatus as DayStatus,
-        cause: (session.cause || undefined) as Cause | undefined,
-        fatigue: session.fatigue ? Number(session.fatigue) : undefined,
       };
       const entries: Omit<ExerciseSet, 'id'>[] = valid.flatMap((r) =>
         Array.from({ length: r.sets }, (_, i) => ({
@@ -104,6 +98,7 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
           syncedAt: 0,
           exercise: r.exercise.trim(),
           category: r.category as Category,
+          equipment: (r.equipment || undefined) as Equipment | undefined,
           set: i + 1,
           value: r.reps ? Number(r.reps) : undefined,
           unit: r.unit as Unit,
@@ -113,7 +108,7 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
 
       await db.sets.bulkAdd(entries);
 
-      // Persist any newly typed exercise names to the local autocomplete cache
+      // Persist any newly typed exercise names
       const uniqueNames = [...new Set(valid.map((r) => r.exercise.trim()))];
       for (const name of uniqueNames) {
         try { await db.exercises.add({ name }); } catch { /* already exists */ }
@@ -128,19 +123,13 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
     }
   }
 
-  // Register save function with parent every render so it stays fresh
   useEffect(() => {
     saveTrigger.current = () => void handleSave();
   });
 
   return (
     <div className="max-w-lg mx-auto">
-      <SessionHeader
-        values={session}
-        onChange={updateSession}
-        collapsed={!headerOpen}
-        onToggle={() => setHeaderOpen((o) => !o)}
-      />
+      <SessionHeader values={session} onChange={updateSession} />
 
       <div className="p-4 space-y-3">
         {rows.map((row, i) => (

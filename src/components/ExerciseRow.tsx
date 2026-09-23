@@ -1,10 +1,11 @@
-import type { Category } from '../types';
+import type { Category, Equipment } from '../types';
 import Autocomplete from './Autocomplete';
 
 export interface RowState {
   key: string;
   exercise: string;
   category: Category | '';
+  equipment: Equipment | '';
   sets: number;
   reps: string;
   unit: 'reps' | 'seconds';
@@ -21,6 +22,9 @@ interface Props {
 
 const CATEGORIES: Category[] = [
   'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General',
+];
+const EQUIPMENTS: Equipment[] = [
+  'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',
 ];
 
 const fieldCls =
@@ -42,14 +46,24 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
         <select
           value={row.category}
           onChange={(e) => onChange({ category: e.target.value as Category })}
-          className={`w-32 flex-shrink-0 ${fieldCls}`}
+          className={`w-28 flex-shrink-0 ${fieldCls}`}
         >
           <option value="">Category</option>
           {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
 
-      {/* Row 2: sets × reps + unit toggle */}
+      {/* Row 2: equipment */}
+      <select
+        value={row.equipment}
+        onChange={(e) => onChange({ equipment: e.target.value as Equipment })}
+        className={`w-full ${fieldCls}`}
+      >
+        <option value="">Equipment</option>
+        {EQUIPMENTS.map((eq) => <option key={eq}>{eq}</option>)}
+      </select>
+
+      {/* Row 3: sets × reps + unit toggle */}
       <div className="flex gap-2 items-center">
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="text-xs text-gray-500">Sets</span>
@@ -71,7 +85,6 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
           inputMode="numeric"
           className={`flex-1 min-w-0 ${fieldCls}`}
         />
-        {/* Unit pill toggle */}
         <div className="flex flex-shrink-0 rounded-lg overflow-hidden border border-gray-700 h-11">
           {(['reps', 'seconds'] as const).map((u) => (
             <button
@@ -90,7 +103,7 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
         </div>
       </div>
 
-      {/* Row 3: notes + remove */}
+      {/* Row 4: notes + remove */}
       <div className="flex gap-2 items-center">
         <input
           type="text"
