@@ -41,7 +41,7 @@ function newRow(): RowState {
     exercise: '',
     category: '',
     equipment: 'Bodyweight',
-    sets: 3,
+    sets: '',
     reps: '',
     unit: 'reps',
     notes: '',
@@ -92,7 +92,7 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
         week: session.week ? Number(session.week) : undefined,
       };
       const entries: Omit<ExerciseSet, 'id'>[] = valid.flatMap((r) =>
-        Array.from({ length: r.sets }, (_, i) => ({
+        Array.from({ length: Math.max(1, Number(r.sets) || 1) }, (_, i) => ({
           ...base,
           clientId: crypto.randomUUID(),
           syncedAt: 0,

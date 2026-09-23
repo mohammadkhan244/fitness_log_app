@@ -6,7 +6,7 @@ export interface RowState {
   exercise: string;
   category: Category | '';
   equipment: Equipment | '';
-  sets: number;
+  sets: string;
   reps: string;
   unit: 'reps' | 'seconds';
   notes: string;
@@ -70,7 +70,7 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
           <input
             type="number"
             value={row.sets}
-            onChange={(e) => onChange({ sets: Math.max(1, Number(e.target.value)) })}
+            onChange={(e) => onChange({ sets: e.target.value })}
             min="1"
             inputMode="numeric"
             className={`w-12 text-center flex-shrink-0 ${fieldCls}`}
