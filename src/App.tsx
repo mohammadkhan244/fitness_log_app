@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 import DashboardScreen from './components/DashboardScreen';
-import InboxScreen from './components/InboxScreen';
+import InsightsScreen from './components/InsightsScreen';
 import LogScreen from './components/LogScreen';
 import SyncStatus from './components/SyncStatus';
 import { useSync } from './hooks/useSync';
 
-type Tab = 'log' | 'dashboard' | 'inbox';
+type Tab = 'log' | 'dashboard' | 'insights';
 
 export default function App() {
   const syncState = useSync();
@@ -33,7 +33,7 @@ export default function App() {
           />
         )}
         {tab === 'dashboard' && <DashboardScreen />}
-        {tab === 'inbox' && <InboxScreen />}
+        {tab === 'insights' && <InsightsScreen />}
       </div>
 
       {/* Unified bottom bar */}
@@ -64,7 +64,7 @@ export default function App() {
             [
               { id: 'log', label: 'Log' },
               { id: 'dashboard', label: 'Dashboard' },
-              { id: 'inbox', label: 'Inbox' },
+              { id: 'insights', label: 'Insights' },
             ] as { id: Tab; label: string }[]
           ).map(({ id, label }) => (
             <button
