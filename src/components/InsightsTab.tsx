@@ -13,11 +13,11 @@ interface Suggestion {
   priority: Priority;
   title: string;
   detail: string;
+  alterEgoLine: string;
   muscles: Muscle[];
   exercises?: string[];
 }
 
-// Exercises from the program to suggest per muscle group
 const SUGGESTED_EXERCISES: Partial<Record<Muscle, string[]>> = {
   Shoulders:    ['Handstand practice', 'Pike push-ups', 'OHP / Sandbag military press'],
   Chest:        ['Dips', 'Push-up variations', 'Slow dips'],
@@ -37,6 +37,18 @@ const SUGGESTED_EXERCISES: Partial<Record<Muscle, string[]>> = {
   Calves:       ['Calf raises', 'Single-leg calf raises', 'Jump rope', 'Sprint protocol'],
 };
 
+// One-sentence alter-ego lines, keyed by the muscle for neglected-structural section
+const NEGLECTED_ALTER_EGO: Partial<Record<Muscle, (sets: number, pctOfAvg: number) => string>> = {
+  'Lower Back': (sets, pctOfAvg) =>
+    `Lower back at ${sets} sets (${pctOfAvg}% of your average muscle volume) — lumbar stabilization is what keeps posterior-chain force in the chain rather than dissipating as joint stress. Scientist work here protects the Primal Engine.`,
+  'Rear Delts': (sets, pctOfAvg) =>
+    `Rear delts at ${sets} sets (${pctOfAvg}% of average) — posterior shoulder stability is what determines whether impingement becomes a training ceiling. Fix before volume creates the problem; this is the cheapest Scientist investment on the list.`,
+  Calves: (sets, pctOfAvg) =>
+    `Calves at ${sets} sets (${pctOfAvg}% of average) — the Achilles tendon is Spider's spring for jumps and reactive ground contact. Tendons lag 8–12 weeks; consistent work now is what pays off in reactive output later.`,
+  Forearms: (sets, pctOfAvg) =>
+    `Grip is the literal Spider-Man constraint — at ${sets} sets (${pctOfAvg}% of average), forearm endurance will fail before lat strength on dead hangs and climbing progressions. Lowest-leverage fix, highest-payoff return.`,
+};
+
 function generateSuggestions(
   muscleSets: Map<Muscle, number>,
   totalSets: number,
@@ -51,7 +63,6 @@ function generateSuggestions(
   // ── 1. Never trained ────────────────────────────────────────────────────────
   const untrained = volumeByMuscle.filter((x) => x.sets === 0).map((x) => x.m);
   if (untrained.length > 0) {
-    // Split into structural-important vs aesthetic
     const structural: Muscle[] = ['Lower Back', 'Rear Delts', 'Traps', 'Hamstrings', 'Hip Flexors'];
     const highPriority = untrained.filter((m) => structural.includes(m));
     if (highPriority.length > 0) {
@@ -59,6 +70,7 @@ function generateSuggestions(
         priority: 'high',
         title: `${highPriority.length} structural group${highPriority.length > 1 ? 's' : ''} with no data`,
         detail: highPriority.join(', '),
+        alterEgoLine: `Across ${totalSets} total sets, ${highPriority.join(' and ')} ${highPriority.length === 1 ? 'has' : 'have'} received zero direct work — Scientist principle: tendon adaptation lags 8–12 weeks behind muscle, so this gap compounds silently until it becomes a ceiling.`,
         muscles: highPriority,
         exercises: highPriority.flatMap((m) => (SUGGESTED_EXERCISES[m] ?? []).slice(0, 1)),
       });
@@ -69,6 +81,7 @@ function generateSuggestions(
         priority: 'medium',
         title: `${rest.length} muscle group${rest.length > 1 ? 's' : ''} with no sets logged`,
         detail: rest.join(', '),
+        alterEgoLine: `${rest.length} region${rest.length > 1 ? 's' : ''} with zero sets across ${totalSets} total logged — maximum force from minimum mass requires every region to contribute proportionally.`,
         muscles: rest,
       });
     }
@@ -87,6 +100,7 @@ function generateSuggestions(
         priority: 'high',
         title: `Push-heavy: ${ratio.toFixed(1)}× more push than pull`,
         detail: `Push: ${pushSets} sets · Pull: ${pullSets} sets. Heavy push-dominant training strains shoulder joints over time.`,
+        alterEgoLine: `At ${ratio.toFixed(1)}× (${pushSets} push vs ${pullSets} pull sets), Spider and Superman both pull as much as they push — anterior muscles are accumulating volume faster than the posterior chain can stabilize. Shoulder impingement is the tax on this imbalance.`,
         muscles: ['Lats', 'Upper Back', 'Rear Delts'],
         exercises: ['Pull-ups (weighted)', 'Full body inverted rows', 'Face pulls', 'Ring rows'],
       });
@@ -95,6 +109,7 @@ function generateSuggestions(
         priority: 'medium',
         title: `Pull-heavy: ${(1 / ratio).toFixed(1)}× more pull than push`,
         detail: `Pull: ${pullSets} sets · Push: ${pushSets} sets. Balance with more pressing work.`,
+        alterEgoLine: `At ${(1 / ratio).toFixed(1)}× pull-to-push (${pullSets} pull vs ${pushSets} push sets), pressing output is lagging — balanced ratio is what makes force transfer efficient rather than strong only in one direction.`,
         muscles: ['Chest', 'Triceps', 'Shoulders'],
         exercises: ['Dips', 'Push-up variations', 'OHP / Pike push-ups'],
       });
@@ -103,6 +118,7 @@ function generateSuggestions(
         priority: 'good',
         title: `Push/pull ratio looks solid (${ratio.toFixed(1)}×)`,
         detail: `Push: ${pushSets} sets · Pull: ${pullSets} sets. Stay within 0.7–1.4× range.`,
+        alterEgoLine: `A ${ratio.toFixed(1)}× push/pull ratio is what lets force transfer efficiently instead of leaking through compensation — this is the 'steel cables, not inflated bubbles' principle in practice.`,
         muscles: [...pushMuscles, ...pullMuscles],
       });
     }
@@ -119,6 +135,7 @@ function generateSuggestions(
         priority: 'high',
         title: `Quad-dominant legs (${ratio.toFixed(1)}× quads vs hamstrings)`,
         detail: `Quads: ${quadSets} sets · Hamstrings: ${hamSets} sets. This ratio is a common cause of knee and lower-back issues.`,
+        alterEgoLine: `At ${ratio.toFixed(1)}× (${quadSets}q/${hamSets}h sets): Superman doesn't have weak hamstrings. Posterior-chain strength is what turns leg power into jumping/sprinting output instead of just squatting numbers — this is a Primal Engine gap (sandbag posterior work) more than a Scientist gap (isolated slow-tempo).`,
         muscles: ['Hamstrings', 'Lower Back'],
         exercises: ['Nordic curls', 'Single-leg RDLs', 'Good mornings', 'Band leg curls'],
       });
@@ -127,6 +144,7 @@ function generateSuggestions(
         priority: 'medium',
         title: `Hamstring-dominant legs`,
         detail: `Hamstrings: ${hamSets} sets · Quads: ${quadSets} sets. Add more squat variations.`,
+        alterEgoLine: `At ${(1 / ratio).toFixed(1)}× hamstring-to-quad (${hamSets}h/${quadSets}q sets), add squat-pattern work to balance — even force production across the range of motion is the Primal Engine baseline for jumping and sprinting.`,
         muscles: ['Quads'],
         exercises: ['Bulgarian split squats', 'Squats', 'Sissy squats'],
       });
@@ -134,7 +152,8 @@ function generateSuggestions(
       suggestions.push({
         priority: 'good',
         title: 'Quad/hamstring balance is healthy',
-        detail: `Quads: ${quadSets} · Hamstrings: ${hamSets} sets. Tendon-first programs love this.`,
+        detail: `Quads: ${quadSets} · Hamstrings: ${hamSets} sets.`,
+        alterEgoLine: `Quad/hamstring ratio ${ratio.toFixed(1)}× (${quadSets}q/${hamSets}h sets) — this balance is what turns leg strength into jump height and sprint output rather than just squat numbers. The Primal Engine pattern.`,
         muscles: ['Quads', 'Hamstrings'],
       });
     }
@@ -147,10 +166,12 @@ function generateSuggestions(
   const anteriorSets = anteriorMuscles.reduce((s, m) => s + (muscleSets.get(m) ?? 0), 0);
 
   if (posteriorSets > 0 && anteriorSets > posteriorSets * 2.5) {
+    const paRatio = anteriorSets / posteriorSets;
     suggestions.push({
       priority: 'medium',
       title: 'Weak posterior chain relative to anterior',
       detail: `Anterior (quads/core/chest): ${anteriorSets} sets · Posterior (hamstrings/glutes/lower back): ${posteriorSets} sets.`,
+      alterEgoLine: `Anterior chain is ${paRatio.toFixed(1)}× posterior (${anteriorSets} vs ${posteriorSets} sets) — the posterior chain is what generates force in Spider/Primal Engine patterns. Front-loaded training builds the look without the athletic output.`,
       muscles: ['Lower Back', 'Glutes', 'Hamstrings'],
       exercises: ['Jefferson curl', 'Single-leg glute bridges', 'Good mornings', 'Nordic curls'],
     });
@@ -165,6 +186,7 @@ function generateSuggestions(
       priority: 'medium',
       title: 'Low core work',
       detail: `Core + Hip Flexors are ${Math.round(corePct * 100)}% of total sets — below the 6–10% range typical for calisthenics.`,
+      alterEgoLine: `At ${Math.round(corePct * 100)}% of total sets, spinal stiffness has less training stimulus than every other region — the midsection is what converts limb force into whole-body output. Every compound movement leaks power through an undertrained core.`,
       muscles: ['Core', 'Hip Flexors'],
       exercises: ['Hollow body holds', 'L-sit hold', 'Planks', 'Dragon flag progressions'],
     });
@@ -173,18 +195,23 @@ function generateSuggestions(
   // ── 6. Neglected structural muscles ─────────────────────────────────────────
   const neglected: Array<{ m: Muscle; threshold: number }> = [
     { m: 'Lower Back', threshold: avg * 0.25 },
-    { m: 'Rear Delts', threshold: avg * 0.2 },
-    { m: 'Calves', threshold: avg * 0.2 },
-    { m: 'Forearms', threshold: avg * 0.15 },
+    { m: 'Rear Delts',  threshold: avg * 0.2 },
+    { m: 'Calves',      threshold: avg * 0.2 },
+    { m: 'Forearms',    threshold: avg * 0.15 },
   ];
 
   for (const { m, threshold } of neglected) {
     const sets = muscleSets.get(m) ?? 0;
     if (sets > 0 && sets < threshold) {
+      const pctOfAvg = Math.round((sets / avg) * 100);
+      const egoFn = NEGLECTED_ALTER_EGO[m];
       suggestions.push({
         priority: 'low',
         title: `Low ${m} volume (${sets} sets)`,
-        detail: `Only ${Math.round((sets / avg) * 100)}% of your average muscle volume. Often overlooked but high-impact.`,
+        detail: `Only ${pctOfAvg}% of your average muscle volume. Often overlooked but high-impact.`,
+        alterEgoLine: egoFn
+          ? egoFn(sets, pctOfAvg)
+          : `${m} at ${sets} sets (${pctOfAvg}% of average) — structural gaps here limit output across every pattern that relies on this chain.`,
         muscles: [m],
         exercises: (SUGGESTED_EXERCISES[m] ?? []).slice(0, 2),
       });
@@ -234,6 +261,10 @@ export default function InsightsTab({ bodyMap, dashboard }: Props) {
               <span className="text-sm font-medium text-gray-200">{s.title}</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">{s.detail}</p>
+            {/* Alter-ego connection line */}
+            <p className="text-xs text-indigo-400/80 leading-relaxed border-l-2 border-indigo-900/60 pl-2">
+              {s.alterEgoLine}
+            </p>
             {s.exercises && s.exercises.length > 0 && (
               <div>
                 <p className="text-xs text-gray-600 mb-1">Try:</p>
@@ -260,9 +291,9 @@ export default function InsightsTab({ bodyMap, dashboard }: Props) {
       })}
 
       {suggestions.length === 0 && (
-        <div className="border border-green-900/50 rounded-xl p-4">
-          <p className="text-sm text-green-300 font-medium">Training looks balanced 💪</p>
-          <p className="text-xs text-gray-400 mt-1">No major imbalances detected. Keep logging to get more specific feedback.</p>
+        <div className="border border-green-900/50 rounded-xl p-4 space-y-1">
+          <p className="text-sm text-green-300 font-medium">Training looks balanced</p>
+          <p className="text-xs text-gray-400">No major imbalances detected across {dashboard.totalSets.toLocaleString()} sets. Keep logging to get more specific feedback.</p>
         </div>
       )}
     </div>
