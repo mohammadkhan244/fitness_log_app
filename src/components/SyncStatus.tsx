@@ -96,9 +96,8 @@ export default function SyncStatus({
             const fix = fixes[id] ?? {};
             const missingCategory = !entry.category;
             const selectedEquipment = fix.equipment ?? (entry.equipment as Equipment | undefined);
-            const selectedCategory = fix.category ?? (entry.category as Category | undefined);
-
-            const canFix = missingCategory ? !!fix.category : true;
+            // Default to General when category missing so Fix & Sync works immediately
+            const selectedCategory = fix.category ?? (entry.category as Category | undefined) ?? (missingCategory ? 'General' as Category : undefined);
 
             return (
               <div key={entry.clientId} className="bg-gray-900 rounded-xl p-3 space-y-2">
@@ -119,18 +118,17 @@ export default function SyncStatus({
                 {/* Notion error */}
                 <p className="text-xs text-red-400 leading-snug break-words">{message}</p>
 
-                {/* Fix category (shown when missing) */}
+                {/* Fix category (shown when missing, defaults to General) */}
                 {missingCategory && (
                   <div className="flex gap-2 items-center">
                     <select
-                      value={selectedCategory ?? ''}
+                      value={selectedCategory ?? 'General'}
                       onChange={(e) => setFixes((prev) => ({
                         ...prev,
                         [id]: { ...prev[id], category: e.target.value as Category },
                       }))}
                       className={selectCls}
                     >
-                      <option value="">— pick category —</option>
                       {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
@@ -152,11 +150,9 @@ export default function SyncStatus({
                   <button
                     onClick={() => {
                       const eq = fix.equipment ?? entry.equipment as Equipment;
-                      const cat = fix.category ?? (entry.category as Category | undefined);
-                      void fixEntry(id, eq, cat);
+                      void fixEntry(id, eq, selectedCategory);
                     }}
-                    disabled={!canFix}
-                    className="h-9 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-lg text-xs font-medium text-white transition-colors flex-shrink-0"
+                    className="h-9 px-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition-colors flex-shrink-0"
                   >
                     Fix & Sync
                   </button>
