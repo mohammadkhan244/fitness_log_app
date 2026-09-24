@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import type { SyncState } from '../hooks/useSync';
-import type { Equipment } from '../types';
+import type { Category, Equipment } from '../types';
 
 const EQUIPMENTS: Equipment[] = [
   'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack',
   'Machine/Cable', 'Barbell', 'None',
+];
+const CATEGORIES: Category[] = [
+  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General',
 ];
 
 function ago(ts: number): string {
@@ -14,12 +17,17 @@ function ago(ts: number): string {
   return `${Math.round(s / 3600)}h ago`;
 }
 
+interface FixState {
+  equipment?: Equipment;
+  category?: Category;
+}
+
 export default function SyncStatus({
   pendingCount, syncing, lastSync, error, failedEntries,
   sync, fixEntry, importing, importProgress, triggerImport,
 }: SyncState) {
   const offline = typeof navigator !== 'undefined' && !navigator.onLine;
-  const [fixes, setFixes] = useState<Record<number, Equipment>>({});
+  const [fixes, setFixes] = useState<Record<number, FixState>>({});
 
   const dotColor = offline
     ? 'bg-gray-600'
@@ -50,6 +58,8 @@ export default function SyncStatus({
       </>
     );
   }
+
+  const selectCls = 'flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 h-9 text-xs text-gray-100 focus:outline-none focus:border-blue-500';
 
   return (
     <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800">
@@ -83,41 +93,69 @@ export default function SyncStatus({
           </p>
           {failedEntries.map(({ entry, message }) => {
             const id = entry.id!;
-            const selectedEquipment = fixes[id] ?? (entry.equipment as Equipment | undefined);
+            const fix = fixes[id] ?? {};
+            const missingCategory = !entry.category;
+            const selectedEquipment = fix.equipment ?? (entry.equipment as Equipment | undefined);
+            const selectedCategory = fix.category ?? (entry.category as Category | undefined);
+
+            const canFix = missingCategory ? !!fix.category : true;
+
             return (
               <div key={entry.clientId} className="bg-gray-900 rounded-xl p-3 space-y-2">
                 {/* Entry info */}
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-medium text-gray-200">{entry.exercise}</p>
-                    <p className="text-xs text-gray-500">{entry.date} · set {entry.set ?? '?'}</p>
-                    {entry.equipment && (
-                      <p className="text-xs text-amber-600 mt-0.5">
-                        Equipment stored: <span className="font-medium">{entry.equipment}</span>
-                      </p>
-                    )}
-                  </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-200">{entry.exercise}</p>
+                  <p className="text-xs text-gray-500">{entry.date} · set {entry.set ?? '?'}</p>
+                  {entry.equipment && (
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Equipment: <span className="font-medium">{entry.equipment}</span>
+                    </p>
+                  )}
+                  {missingCategory && (
+                    <p className="text-xs text-amber-500 mt-0.5">Category missing</p>
+                  )}
                 </div>
 
                 {/* Notion error */}
                 <p className="text-xs text-red-400 leading-snug break-words">{message}</p>
 
+                {/* Fix category (shown when missing) */}
+                {missingCategory && (
+                  <div className="flex gap-2 items-center">
+                    <select
+                      value={selectedCategory ?? ''}
+                      onChange={(e) => setFixes((prev) => ({
+                        ...prev,
+                        [id]: { ...prev[id], category: e.target.value as Category },
+                      }))}
+                      className={selectCls}
+                    >
+                      <option value="">— pick category —</option>
+                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                )}
+
                 {/* Fix equipment */}
                 <div className="flex gap-2 items-center">
                   <select
                     value={selectedEquipment ?? ''}
-                    onChange={(e) => setFixes((prev) => ({ ...prev, [id]: e.target.value as Equipment }))}
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 h-9 text-xs text-gray-100 focus:outline-none focus:border-blue-500"
+                    onChange={(e) => setFixes((prev) => ({
+                      ...prev,
+                      [id]: { ...prev[id], equipment: e.target.value as Equipment },
+                    }))}
+                    className={selectCls}
                   >
                     <option value="">— fix equipment —</option>
                     {EQUIPMENTS.map((eq) => <option key={eq} value={eq}>{eq}</option>)}
                   </select>
                   <button
                     onClick={() => {
-                      const eq = fixes[id];
-                      if (eq) void fixEntry(id, eq);
+                      const eq = fix.equipment ?? entry.equipment as Equipment;
+                      const cat = fix.category ?? (entry.category as Category | undefined);
+                      void fixEntry(id, eq, cat);
                     }}
-                    disabled={!fixes[id]}
+                    disabled={!canFix}
                     className="h-9 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-lg text-xs font-medium text-white transition-colors flex-shrink-0"
                   >
                     Fix & Sync

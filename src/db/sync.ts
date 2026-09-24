@@ -14,7 +14,7 @@ function toNotionPage(e: ExerciseSet): object {
       Date: { date: { start: e.date } },
       ...(e.week != null && { Week: { number: e.week } }),
       Year: { select: { name: String(new Date(e.date + 'T12:00:00').getFullYear()) } },
-      Category: { select: { name: e.category } },
+      Category: { select: { name: e.category || 'General' } },
       ...(e.value != null && { Value: { number: e.value } }),
       ...(e.unit && e.unit !== 'none' && { Unit: { select: { name: e.unit } } }),
       ...(e.domain && { Domain: { select: { name: e.domain } } }),

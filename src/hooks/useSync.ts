@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
 import { importFromNotion, syncPending, type SyncFailure } from '../db/sync';
-import type { Equipment } from '../types';
+import type { Category, Equipment } from '../types';
 
 export interface SyncState {
   pendingCount: number;
@@ -11,7 +11,7 @@ export interface SyncState {
   error: string | null;
   failedEntries: SyncFailure[];
   sync: () => Promise<void>;
-  fixEntry: (id: number, equipment: Equipment) => Promise<void>;
+  fixEntry: (id: number, equipment: Equipment, category?: Category) => Promise<void>;
   importing: boolean;
   importProgress: string | null;
   triggerImport: () => Promise<void>;
@@ -51,9 +51,8 @@ export function useSync(): SyncState {
     }
   }, [syncing]);
 
-  const fixEntry = useCallback(async (id: number, equipment: Equipment) => {
-    await db.sets.update(id, { equipment });
-    // Remove from failed list optimistically
+  const fixEntry = useCallback(async (id: number, equipment: Equipment, category?: Category) => {
+    await db.sets.update(id, { equipment, ...(category && { category }) });
     setFailedEntries((prev) => prev.filter((f) => f.entry.id !== id));
     await sync();
   }, [sync]);
