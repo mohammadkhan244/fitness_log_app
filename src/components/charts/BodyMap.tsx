@@ -464,11 +464,17 @@ export default function BodyMap({ data }: Props) {
               {selectedExercises.length === 0 ? (
                 <p className="text-xs text-gray-600">No exercises mapped yet.</p>
               ) : (
-                <ul className="space-y-1">
-                  {selectedExercises.map((ex) => (
-                    <li key={ex} className="text-xs text-gray-300 truncate">{ex}</li>
-                  ))}
-                </ul>
+                <details className="group">
+                  <summary className="text-xs text-gray-500 cursor-pointer select-none list-none flex items-center gap-1 hover:text-gray-300">
+                    <span className="group-open:rotate-90 transition-transform inline-block text-gray-600">▶</span>
+                    {selectedExercises.length} exercise{selectedExercises.length !== 1 ? 's' : ''}
+                  </summary>
+                  <ul className="mt-1.5 max-h-48 overflow-y-auto space-y-1 pr-1">
+                    {selectedExercises.map((ex) => (
+                      <li key={ex} className="text-xs text-gray-300 truncate">{ex}</li>
+                    ))}
+                  </ul>
+                </details>
               )}
             </div>
           ) : (
