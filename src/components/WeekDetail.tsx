@@ -31,6 +31,8 @@ export default function WeekDetail({ week, onClose }: Props) {
   const [start, end] = weekDateRange(week);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [pendingDate, setPendingDate] = useState('');
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+  const [pendingEntryDate, setPendingEntryDate] = useState('');
   const [saving, setSaving] = useState(false);
 
   const allEntries = useLiveQuery(async () => {
@@ -49,6 +51,17 @@ export default function WeekDetail({ week, onClose }: Props) {
     const arr = byDate.get(e.date) ?? [];
     arr.push(e);
     byDate.set(e.date, arr);
+  }
+
+  async function handleMoveEntry(entry: ExerciseSet, newDate: string) {
+    if (!newDate || newDate === entry.date) { setEditingEntryId(null); return; }
+    setSaving(true);
+    try {
+      await db.sets.update(entry.id!, { date: newDate, week: computedWeek(newDate) });
+    } finally {
+      setSaving(false);
+      setEditingEntryId(null);
+    }
   }
 
   async function handleMoveDate(dayEntries: ExerciseSet[], newDate: string) {
@@ -140,7 +153,7 @@ export default function WeekDetail({ week, onClose }: Props) {
                         )}
                       </span>
                       <button
-                        onClick={() => { setEditingDate(date); setPendingDate(date); }}
+                        onClick={() => { setEditingDate(date); setPendingDate(date); setEditingEntryId(null); }}
                         className="text-gray-600 hover:text-gray-300 text-xs px-2 py-0.5 rounded transition-colors"
                         title="Fix date"
                       >
@@ -153,23 +166,55 @@ export default function WeekDetail({ week, onClose }: Props) {
                 {/* Entries */}
                 <div className="space-y-1">
                   {dayEntries.map((e) => (
-                    <div key={e.id} className="flex items-center gap-2 text-sm py-1 border-b border-gray-800/50">
-                      <span className="text-gray-300 flex-1 min-w-0 truncate">{e.exercise}</span>
-                      {e.set != null && (
-                        <span className="text-gray-600 text-xs flex-shrink-0">set {e.set}</span>
-                      )}
-                      {e.value != null && (
-                        <span className="text-amber-400 text-xs font-medium flex-shrink-0">
-                          {e.value}{UNIT_SHORT[e.unit ?? ''] ?? e.unit ?? ''}
-                        </span>
-                      )}
-                      {e.value == null && e.detail && (
-                        <span className="text-amber-400 text-xs font-medium flex-shrink-0">{e.detail}</span>
-                      )}
-                      {e.category && e.category !== 'General' && (
-                        <span className="text-gray-700 text-xs flex-shrink-0">{e.category}</span>
-                      )}
-                    </div>
+                    editingEntryId === e.id ? (
+                      <div key={e.id} className="flex items-center gap-2 py-1 border-b border-gray-800/50">
+                        <span className="text-xs text-gray-400 truncate flex-shrink-0 max-w-[90px]">{e.exercise}</span>
+                        <input
+                          type="date"
+                          defaultValue={e.date}
+                          onChange={(ev) => setPendingEntryDate(ev.target.value)}
+                          className="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded-lg px-2 h-7 text-xs text-gray-100 focus:outline-none focus:border-blue-500"
+                        />
+                        <button
+                          onClick={() => void handleMoveEntry(e, pendingEntryDate || e.date)}
+                          disabled={saving}
+                          className="text-xs text-blue-400 hover:text-blue-300 font-medium disabled:opacity-50 flex-shrink-0"
+                        >
+                          {saving ? '…' : 'Move'}
+                        </button>
+                        <button
+                          onClick={() => setEditingEntryId(null)}
+                          className="text-xs text-gray-500 hover:text-gray-300 flex-shrink-0"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div key={e.id} className="flex items-center gap-2 text-sm py-1 border-b border-gray-800/50">
+                        <span className="text-gray-300 flex-1 min-w-0 truncate">{e.exercise}</span>
+                        {e.set != null && (
+                          <span className="text-gray-600 text-xs flex-shrink-0">set {e.set}</span>
+                        )}
+                        {e.value != null && (
+                          <span className="text-amber-400 text-xs font-medium flex-shrink-0">
+                            {e.value}{UNIT_SHORT[e.unit ?? ''] ?? e.unit ?? ''}
+                          </span>
+                        )}
+                        {e.value == null && e.detail && (
+                          <span className="text-amber-400 text-xs font-medium flex-shrink-0">{e.detail}</span>
+                        )}
+                        {e.category && e.category !== 'General' && (
+                          <span className="text-gray-700 text-xs flex-shrink-0">{e.category}</span>
+                        )}
+                        <button
+                          onClick={() => { setEditingEntryId(e.id!); setPendingEntryDate(e.date); setEditingDate(null); }}
+                          className="text-gray-700 hover:text-gray-400 text-xs flex-shrink-0 transition-colors"
+                          title="Fix date for this exercise"
+                        >
+                          ✎
+                        </button>
+                      </div>
+                    )
                   ))}
                 </div>
               </div>
