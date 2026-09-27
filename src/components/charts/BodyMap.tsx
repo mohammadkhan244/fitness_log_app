@@ -324,7 +324,7 @@ export default function BodyMap({ data }: Props) {
   const selectedExercises = selected ? (muscleExercises.get(selected) ?? []) : [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Front/Back toggle */}
       <div className="flex gap-1 bg-gray-800 rounded-lg p-1 w-fit">
         {(['front', 'back'] as View[]).map((v) => (
@@ -340,158 +340,154 @@ export default function BodyMap({ data }: Props) {
         ))}
       </div>
 
-      <div className="flex gap-4 items-start">
-        {/* SVG Body */}
-        <div className="flex-shrink-0">
-          <svg viewBox="0 0 120 250" className="w-32" style={{ display: 'block' }}>
-            {/* Head */}
-            <circle cx="60" cy="17" r="14" fill="#374151" />
-            {/* Neck */}
-            <rect x="55" y="30" width="10" height="8" fill="#374151" />
+      {/* SVG Body — full width, arms outstretched */}
+      <svg viewBox="0 0 260 258" className="w-full" style={{ display: 'block' }}>
+        {/* Head */}
+        <circle cx="130" cy="16" r="13" fill="#374151" />
+        {/* Neck */}
+        <rect x="123" y="28" width="14" height="7" fill="#374151" />
 
-            {view === 'front' && <>
-              {/* Shoulders */}
-              <rect x="24" y="40" width="22" height="18" rx="5" {...regionProps('Shoulders')} />
-              <rect x="74" y="40" width="22" height="18" rx="5" {...regionProps('Shoulders')} />
-              {/* Chest */}
-              <rect x="38" y="40" width="44" height="32" rx="6" {...regionProps('Chest')} />
-              {/* Biceps */}
-              <rect x="20" y="60" width="17" height="30" rx="5" {...regionProps('Biceps')} />
-              <rect x="83" y="60" width="17" height="30" rx="5" {...regionProps('Biceps')} />
-              {/* Forearms */}
-              <rect x="16" y="92" width="15" height="26" rx="4" {...regionProps('Forearms')} />
-              <rect x="89" y="92" width="15" height="26" rx="4" {...regionProps('Forearms')} />
-              {/* Core */}
-              <rect x="40" y="74" width="40" height="38" rx="5" {...regionProps('Core')} />
-              {/* Hip Flexors */}
-              <rect x="40" y="114" width="40" height="16" rx="4" {...regionProps('Hip Flexors')} />
-              {/* Quads */}
-              <rect x="36" y="132" width="22" height="50" rx="6" {...regionProps('Quads')} />
-              <rect x="62" y="132" width="22" height="50" rx="6" {...regionProps('Quads')} />
-              {/* Calves */}
-              <rect x="36" y="184" width="20" height="38" rx="5" {...regionProps('Calves')} />
-              <rect x="64" y="184" width="20" height="38" rx="5" {...regionProps('Calves')} />
+        {view === 'front' && <>
+          {/* Shoulders — bridge between arm and torso */}
+          <rect x="58" y="35" width="32" height="22" rx="6" {...regionProps('Shoulders')} />
+          <rect x="170" y="35" width="32" height="22" rx="6" {...regionProps('Shoulders')} />
+          {/* Chest — center torso */}
+          <rect x="90" y="35" width="80" height="38" rx="7" {...regionProps('Chest')} />
+          {/* Biceps — upper arm, clear of torso */}
+          <rect x="32" y="55" width="26" height="38" rx="6" {...regionProps('Biceps')} />
+          <rect x="202" y="55" width="26" height="38" rx="6" {...regionProps('Biceps')} />
+          {/* Forearms — lower arm */}
+          <rect x="24" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
+          <rect x="214" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
+          {/* Core */}
+          <rect x="90" y="75" width="80" height="44" rx="6" {...regionProps('Core')} />
+          {/* Hip Flexors */}
+          <rect x="90" y="121" width="80" height="16" rx="4" {...regionProps('Hip Flexors')} />
+          {/* Quads */}
+          <rect x="82" y="139" width="36" height="54" rx="7" {...regionProps('Quads')} />
+          <rect x="142" y="139" width="36" height="54" rx="7" {...regionProps('Quads')} />
+          {/* Calves */}
+          <rect x="82" y="195" width="34" height="42" rx="6" {...regionProps('Calves')} />
+          <rect x="144" y="195" width="34" height="42" rx="6" {...regionProps('Calves')} />
 
-              {/* ── Labels ── */}
-              <PctLabel muscle="Shoulders" x={35} y={51} fs={5} />
-              <PctLabel muscle="Shoulders" x={85} y={51} fs={5} />
-              <text x="60" y="57" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="600" pointerEvents="none">Chest</text>
-              <PctLabel muscle="Chest" x={60} y={65} fs={5.5} />
-              <PctLabel muscle="Biceps" x={28} y={76} fs={5} />
-              <PctLabel muscle="Biceps" x={91} y={76} fs={5} />
-              <PctLabel muscle="Forearms" x={23} y={107} fs={4.5} />
-              <PctLabel muscle="Forearms" x={96} y={107} fs={4.5} />
-              <text x="60" y="93" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="600" pointerEvents="none">Core</text>
-              <PctLabel muscle="Core" x={60} y={101} fs={5.5} />
-              <PctLabel muscle="Hip Flexors" x={60} y={123} fs={4.5} />
-              <text x="47" y="157" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Quad</text>
-              <PctLabel muscle="Quads" x={47} y={164} fs={5.5} />
-              <text x="73" y="157" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Quad</text>
-              <PctLabel muscle="Quads" x={73} y={164} fs={5.5} />
-              <PctLabel muscle="Calves" x={46} y={205} fs={5} />
-              <PctLabel muscle="Calves" x={74} y={205} fs={5} />
-            </>}
+          {/* ── Labels ── */}
+          <PctLabel muscle="Shoulders" x={74} y={49} fs={6} />
+          <PctLabel muscle="Shoulders" x={186} y={49} fs={6} />
+          <text x="130" y="52" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" pointerEvents="none">Chest</text>
+          <PctLabel muscle="Chest" x={130} y={62} fs={6.5} />
+          <text x="45" y="72" textAnchor="middle" fill="white" fontSize="6" pointerEvents="none">Biceps</text>
+          <PctLabel muscle="Biceps" x={45} y={80} fs={6} />
+          <text x="215" y="72" textAnchor="middle" fill="white" fontSize="6" pointerEvents="none">Biceps</text>
+          <PctLabel muscle="Biceps" x={215} y={80} fs={6} />
+          <text x="35" y="109" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Arms</text>
+          <PctLabel muscle="Forearms" x={35} y={118} fs={5.5} />
+          <text x="225" y="109" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Arms</text>
+          <PctLabel muscle="Forearms" x={225} y={118} fs={5.5} />
+          <text x="130" y="93" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" pointerEvents="none">Core</text>
+          <PctLabel muscle="Core" x={130} y={103} fs={6.5} />
+          <PctLabel muscle="Hip Flexors" x={130} y={132} fs={5.5} />
+          <text x="100" y="163" textAnchor="middle" fill="white" fontSize="6.5" pointerEvents="none">Quad</text>
+          <PctLabel muscle="Quads" x={100} y={172} fs={6.5} />
+          <text x="160" y="163" textAnchor="middle" fill="white" fontSize="6.5" pointerEvents="none">Quad</text>
+          <PctLabel muscle="Quads" x={160} y={172} fs={6.5} />
+          <PctLabel muscle="Calves" x={99} y={219} fs={6} />
+          <PctLabel muscle="Calves" x={161} y={219} fs={6} />
+        </>}
 
-            {view === 'back' && <>
-              {/* Rear Delts */}
-              <rect x="24" y="40" width="22" height="18" rx="5" {...regionProps('Rear Delts')} />
-              <rect x="74" y="40" width="22" height="18" rx="5" {...regionProps('Rear Delts')} />
-              {/* Traps */}
-              <rect x="38" y="40" width="44" height="22" rx="5" {...regionProps('Traps')} />
-              {/* Upper Back */}
-              <rect x="40" y="62" width="40" height="30" rx="5" {...regionProps('Upper Back')} />
-              {/* Lats */}
-              <rect x="28" y="62" width="20" height="40" rx="5" {...regionProps('Lats')} />
-              <rect x="72" y="62" width="20" height="40" rx="5" {...regionProps('Lats')} />
-              {/* Triceps */}
-              <rect x="20" y="60" width="17" height="30" rx="5" {...regionProps('Triceps')} />
-              <rect x="83" y="60" width="17" height="30" rx="5" {...regionProps('Triceps')} />
-              {/* Forearms */}
-              <rect x="16" y="92" width="15" height="26" rx="4" {...regionProps('Forearms')} />
-              <rect x="89" y="92" width="15" height="26" rx="4" {...regionProps('Forearms')} />
-              {/* Lower Back */}
-              <rect x="40" y="94" width="40" height="22" rx="4" {...regionProps('Lower Back')} />
-              {/* Glutes */}
-              <rect x="37" y="118" width="22" height="28" rx="6" {...regionProps('Glutes')} />
-              <rect x="61" y="118" width="22" height="28" rx="6" {...regionProps('Glutes')} />
-              {/* Hamstrings */}
-              <rect x="37" y="148" width="22" height="48" rx="6" {...regionProps('Hamstrings')} />
-              <rect x="61" y="148" width="22" height="48" rx="6" {...regionProps('Hamstrings')} />
-              {/* Calves */}
-              <rect x="37" y="198" width="20" height="34" rx="5" {...regionProps('Calves')} />
-              <rect x="63" y="198" width="20" height="34" rx="5" {...regionProps('Calves')} />
+        {view === 'back' && <>
+          {/* Rear Delts — shoulder-width flanks */}
+          <rect x="58" y="35" width="32" height="22" rx="6" {...regionProps('Rear Delts')} />
+          <rect x="170" y="35" width="32" height="22" rx="6" {...regionProps('Rear Delts')} />
+          {/* Traps — upper center */}
+          <rect x="90" y="35" width="80" height="26" rx="6" {...regionProps('Traps')} />
+          {/* Upper Back */}
+          <rect x="92" y="63" width="76" height="36" rx="6" {...regionProps('Upper Back')} />
+          {/* Lats — torso sides, clear of triceps */}
+          <rect x="62" y="61" width="30" height="48" rx="6" {...regionProps('Lats')} />
+          <rect x="168" y="61" width="30" height="48" rx="6" {...regionProps('Lats')} />
+          {/* Triceps — upper arm */}
+          <rect x="32" y="55" width="26" height="38" rx="6" {...regionProps('Triceps')} />
+          <rect x="202" y="55" width="26" height="38" rx="6" {...regionProps('Triceps')} />
+          {/* Forearms */}
+          <rect x="24" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
+          <rect x="214" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
+          {/* Lower Back */}
+          <rect x="92" y="101" width="76" height="26" rx="5" {...regionProps('Lower Back')} />
+          {/* Glutes */}
+          <rect x="84" y="129" width="38" height="34" rx="7" {...regionProps('Glutes')} />
+          <rect x="138" y="129" width="38" height="34" rx="7" {...regionProps('Glutes')} />
+          {/* Hamstrings */}
+          <rect x="84" y="165" width="36" height="54" rx="7" {...regionProps('Hamstrings')} />
+          <rect x="140" y="165" width="36" height="54" rx="7" {...regionProps('Hamstrings')} />
+          {/* Calves */}
+          <rect x="84" y="221" width="34" height="36" rx="6" {...regionProps('Calves')} />
+          <rect x="142" y="221" width="34" height="36" rx="6" {...regionProps('Calves')} />
 
-              {/* ── Labels ── */}
-              <PctLabel muscle="Rear Delts" x={35} y={51} fs={5} />
-              <PctLabel muscle="Rear Delts" x={85} y={51} fs={5} />
-              <text x="60" y="50" textAnchor="middle" fill="white" fontSize="6" fontWeight="600" pointerEvents="none">Traps</text>
-              <PctLabel muscle="Traps" x={60} y={57} fs={5.5} />
-              <text x="60" y="76" textAnchor="middle" fill="white" fontSize="5.5" fontWeight="600" pointerEvents="none">U.Back</text>
-              <PctLabel muscle="Upper Back" x={60} y={83} fs={5.5} />
-              <PctLabel muscle="Lats" x={38} y={84} fs={5} />
-              <PctLabel muscle="Lats" x={82} y={84} fs={5} />
-              <PctLabel muscle="Triceps" x={28} y={76} fs={5} />
-              <PctLabel muscle="Triceps" x={91} y={76} fs={5} />
-              <PctLabel muscle="Forearms" x={23} y={107} fs={4.5} />
-              <PctLabel muscle="Forearms" x={96} y={107} fs={4.5} />
-              <text x="60" y="104" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Lower Back</text>
-              <PctLabel muscle="Lower Back" x={60} y={111} fs={5.5} />
-              <text x="48" y="131" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Glute</text>
-              <PctLabel muscle="Glutes" x={48} y={138} fs={5.5} />
-              <text x="72" y="131" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Glute</text>
-              <PctLabel muscle="Glutes" x={72} y={138} fs={5.5} />
-              <PctLabel muscle="Hamstrings" x={48} y={173} fs={5} />
-              <PctLabel muscle="Hamstrings" x={72} y={173} fs={5} />
-              <PctLabel muscle="Calves" x={47} y={217} fs={5} />
-              <PctLabel muscle="Calves" x={73} y={217} fs={5} />
-            </>}
-          </svg>
-        </div>
+          {/* ── Labels ── */}
+          <PctLabel muscle="Rear Delts" x={74} y={49} fs={6} />
+          <PctLabel muscle="Rear Delts" x={186} y={49} fs={6} />
+          <text x="130" y="50" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" pointerEvents="none">Traps</text>
+          <PctLabel muscle="Traps" x={130} y={59} fs={6.5} />
+          <text x="130" y="80" textAnchor="middle" fill="white" fontSize="7" fontWeight="600" pointerEvents="none">U.Back</text>
+          <PctLabel muscle="Upper Back" x={130} y={89} fs={6.5} />
+          <PctLabel muscle="Lats" x={77} y={88} fs={6} />
+          <PctLabel muscle="Lats" x={183} y={88} fs={6} />
+          <text x="45" y="72" textAnchor="middle" fill="white" fontSize="6" pointerEvents="none">Triceps</text>
+          <PctLabel muscle="Triceps" x={45} y={80} fs={6} />
+          <text x="215" y="72" textAnchor="middle" fill="white" fontSize="6" pointerEvents="none">Triceps</text>
+          <PctLabel muscle="Triceps" x={215} y={80} fs={6} />
+          <text x="35" y="109" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Arms</text>
+          <PctLabel muscle="Forearms" x={35} y={118} fs={5.5} />
+          <text x="225" y="109" textAnchor="middle" fill="white" fontSize="5.5" pointerEvents="none">Arms</text>
+          <PctLabel muscle="Forearms" x={225} y={118} fs={5.5} />
+          <text x="130" y="113" textAnchor="middle" fill="white" fontSize="6" pointerEvents="none">L.Back</text>
+          <PctLabel muscle="Lower Back" x={130} y={121} fs={6} />
+          <text x="103" y="147" textAnchor="middle" fill="white" fontSize="6.5" pointerEvents="none">Glute</text>
+          <PctLabel muscle="Glutes" x={103} y={156} fs={6.5} />
+          <text x="157" y="147" textAnchor="middle" fill="white" fontSize="6.5" pointerEvents="none">Glute</text>
+          <PctLabel muscle="Glutes" x={157} y={156} fs={6.5} />
+          <PctLabel muscle="Hamstrings" x={102} y={194} fs={6} />
+          <PctLabel muscle="Hamstrings" x={158} y={194} fs={6} />
+          <PctLabel muscle="Calves" x={101} y={242} fs={6} />
+          <PctLabel muscle="Calves" x={159} y={242} fs={6} />
+        </>}
+      </svg>
 
-        {/* Compact sidebar: name + set count + exercise list */}
-        <div className="flex-1 min-w-0">
-          {selected ? (
+      {/* Muscle detail — below figure */}
+      {selected ? (
+        <div className="border border-gray-800 rounded-xl p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-amber-400">{selected}</span>
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-amber-400">{selected}</span>
-                <div className="text-right">
-                  <span className="text-xs text-gray-400">{selectedCount} sets</span>
-                  {pct(selected) > 0 && (
-                    <span className="text-xs text-amber-500 ml-2 font-semibold">{pct(selected)}%</span>
-                  )}
-                </div>
-              </div>
-              {selectedExercises.length === 0 ? (
-                <p className="text-xs text-gray-600">No exercises mapped yet.</p>
-              ) : (
-                <details className="group">
-                  <summary className="text-xs text-gray-500 cursor-pointer select-none list-none flex items-center gap-1 hover:text-gray-300">
-                    <span className="group-open:rotate-90 transition-transform inline-block text-gray-600">▶</span>
-                    {selectedExercises.length} exercise{selectedExercises.length !== 1 ? 's' : ''}
-                  </summary>
-                  <ul className="mt-1.5 max-h-48 overflow-y-auto space-y-1 pr-1">
-                    {selectedExercises.map((ex) => (
-                      <li key={ex} className="text-xs text-gray-300 truncate">{ex}</li>
-                    ))}
-                  </ul>
-                </details>
+              <span className="text-xs text-gray-400">{selectedCount} sets</span>
+              {pct(selected) > 0 && (
+                <span className="text-xs text-amber-500 ml-2 font-semibold">{pct(selected)}%</span>
               )}
             </div>
+          </div>
+          {selectedExercises.length === 0 ? (
+            <p className="text-xs text-gray-600">No exercises mapped yet.</p>
           ) : (
-            <div className="text-xs text-gray-600 pt-2">
-              Tap a region to see exercises
-            </div>
+            <details className="group">
+              <summary className="text-xs text-gray-500 cursor-pointer select-none list-none flex items-center gap-1 hover:text-gray-300">
+                <span className="group-open:rotate-90 transition-transform inline-block text-gray-600">▶</span>
+                {selectedExercises.length} exercise{selectedExercises.length !== 1 ? 's' : ''}
+              </summary>
+              <ul className="mt-1.5 max-h-48 overflow-y-auto space-y-1 pr-1">
+                {selectedExercises.map((ex) => (
+                  <li key={ex} className="text-xs text-gray-300 truncate">{ex}</li>
+                ))}
+              </ul>
+            </details>
           )}
+          <MuscleAnalysis
+            muscle={selected}
+            muscleSets={muscleSets}
+            total={totalMuscleSets}
+          />
         </div>
-      </div>
-
-      {/* Full-width analysis panel — appears below SVG row when a muscle is selected */}
-      {selected && (
-        <MuscleAnalysis
-          muscle={selected}
-          muscleSets={muscleSets}
-          total={totalMuscleSets}
-        />
+      ) : (
+        <p className="text-xs text-gray-600 text-center">Tap a region to see exercises</p>
       )}
 
       {/* Colour scale legend */}
