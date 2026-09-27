@@ -3,6 +3,13 @@ import type { Category, Cause, DayStatus, Domain, Equipment, ExerciseSet, Unit }
 import { db } from './schema';
 
 const DS_ID = import.meta.env.VITE_WORKOUT_LOG_DATA_SOURCE_ID as string;
+const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
+
+function weekFromDate(date: string): number {
+  const d = new Date(date + 'T12:00:00').getTime();
+  const days = Math.round((d - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
+  return Math.max(1, Math.floor(days / 7) + 1);
+}
 
 // ─── Push local entries to Notion ────────────────────────────────────────────
 
@@ -69,6 +76,32 @@ export async function syncPending(): Promise<{ synced: number; failed: number; e
   }
 
   return { synced, failed, errors };
+}
+
+// ─── Update a single entry's date (local + Notion PATCH if already synced) ───
+
+export async function updateEntryDate(
+  id: number,
+  notionPageId: string | undefined,
+  newDate: string,
+): Promise<void> {
+  const newWeek = weekFromDate(newDate);
+  // Always update locally first
+  await db.sets.update(id, { date: newDate, week: newWeek });
+  // If this entry was already pushed to Notion, PATCH it in place
+  if (notionPageId) {
+    await notionProxy({
+      path: `pages/${notionPageId}`,
+      method: 'PATCH',
+      body: {
+        properties: {
+          Date: { date: { start: newDate } },
+          Week: { number: newWeek },
+          Year: { select: { name: String(new Date(newDate + 'T12:00:00').getFullYear()) } },
+        },
+      },
+    });
+  }
 }
 
 // ─── Import historical data from Notion ──────────────────────────────────────

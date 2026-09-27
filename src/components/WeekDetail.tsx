@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
+import { updateEntryDate } from '../db/sync';
 import type { ExerciseSet } from '../types';
 
 interface Props {
@@ -17,11 +18,6 @@ function weekDateRange(week: number): [string, string] {
   return [fmt(startMs), fmt(endMs)];
 }
 
-function computedWeek(date: string): number {
-  const d = new Date(date + 'T12:00:00').getTime();
-  const days = Math.round((d - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
-  return Math.max(1, Math.floor(days / 7) + 1);
-}
 
 const UNIT_SHORT: Record<string, string> = {
   seconds: 's', lbs: 'lbs', reps_total: 'reps', reps: 'reps', reps_per_leg: 'reps/leg', none: '',
@@ -41,7 +37,7 @@ export default function WeekDetail({ week, onClose }: Props) {
       (s) =>
         s.week === week ||
         (s.date >= start && s.date < end) ||
-        computedWeek(s.date) === week,
+        (Math.max(1, Math.floor(Math.round((new Date(s.date + 'T12:00:00').getTime() - PROGRAM_START_MS) / 86400000) / 7) + 1)) === week,
     );
     return matched.sort((a, b) => a.date.localeCompare(b.date));
   }, [week]);
@@ -57,7 +53,7 @@ export default function WeekDetail({ week, onClose }: Props) {
     if (!newDate || newDate === entry.date) { setEditingEntryId(null); return; }
     setSaving(true);
     try {
-      await db.sets.update(entry.id!, { date: newDate, week: computedWeek(newDate) });
+      await updateEntryDate(entry.id!, entry.notionPageId, newDate);
     } finally {
       setSaving(false);
       setEditingEntryId(null);
@@ -70,10 +66,9 @@ export default function WeekDetail({ week, onClose }: Props) {
       return;
     }
     setSaving(true);
-    const newWeek = computedWeek(newDate);
     try {
       await Promise.all(
-        dayEntries.map((e) => db.sets.update(e.id!, { date: newDate, week: newWeek })),
+        dayEntries.map((e) => updateEntryDate(e.id!, e.notionPageId, newDate)),
       );
     } finally {
       setSaving(false);
