@@ -20,7 +20,10 @@ function weekDateRange(week: number): [string, string] {
 
 
 const UNIT_SHORT: Record<string, string> = {
-  seconds: 's', lbs: 'lbs', reps_total: 'reps', reps: 'reps', reps_per_leg: 'reps/leg', none: '',
+  seconds: 's', minutes: 'min', lbs: 'lbs',
+  reps_total: 'reps', reps: 'reps', reps_per_leg: 'reps/leg',
+  miles: 'mi', km: 'km', meters: 'm',
+  none: '',
 };
 
 export default function WeekDetail({ week, onClose }: Props) {

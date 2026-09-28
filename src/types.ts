@@ -24,10 +24,14 @@ export type Category =
   | 'General';
 export type Unit =
   | 'seconds'
+  | 'minutes'
   | 'lbs'
   | 'reps_total'
   | 'reps'
   | 'reps_per_leg'
+  | 'miles'
+  | 'km'
+  | 'meters'
   | 'none';
 
 export type EntrySource = 'local' | 'notion';

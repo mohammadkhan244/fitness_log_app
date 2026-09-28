@@ -1,4 +1,4 @@
-import type { Category, Equipment } from '../types';
+import type { Category, Equipment, Unit } from '../types';
 import Autocomplete from './Autocomplete';
 
 export interface RowState {
@@ -8,7 +8,7 @@ export interface RowState {
   equipment: Equipment | '';
   sets: string;
   reps: string;
-  unit: 'reps' | 'seconds';
+  unit: Unit;
   notes: string;
 }
 
@@ -26,6 +26,15 @@ const CATEGORIES: Category[] = [
 const EQUIPMENTS: Equipment[] = [
   'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',
 ];
+
+const DECIMAL_UNITS = new Set<Unit>(['miles', 'km', 'meters']);
+
+const VALUE_PLACEHOLDER: Partial<Record<Unit, string>> = {
+  reps: 'Reps', reps_per_leg: 'Reps/leg', reps_total: 'Total reps',
+  seconds: 'Seconds', minutes: 'Minutes',
+  miles: 'Miles', km: 'Km', meters: 'Meters',
+  lbs: 'Weight',
+};
 
 const fieldCls =
   'bg-gray-800 border border-gray-700 rounded-lg px-3 h-11 text-base text-gray-100 focus:outline-none focus:border-blue-500';
@@ -63,7 +72,7 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
         {EQUIPMENTS.map((eq) => <option key={eq}>{eq}</option>)}
       </select>
 
-      {/* Row 3: sets × reps + unit toggle */}
+      {/* Row 3: sets × value + unit */}
       <div className="flex gap-2 items-center">
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="text-xs text-gray-500">Sets</span>
@@ -81,26 +90,34 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
           type="number"
           value={row.reps}
           onChange={(e) => onChange({ reps: e.target.value })}
-          placeholder={row.unit === 'seconds' ? 'Sec' : 'Reps'}
-          inputMode="numeric"
+          placeholder={VALUE_PLACEHOLDER[row.unit] ?? 'Value'}
+          inputMode={DECIMAL_UNITS.has(row.unit) ? 'decimal' : 'numeric'}
+          step={DECIMAL_UNITS.has(row.unit) ? 'any' : undefined}
           className={`flex-1 min-w-0 ${fieldCls}`}
         />
-        <div className="flex flex-shrink-0 rounded-lg overflow-hidden border border-gray-700 h-11">
-          {(['reps', 'seconds'] as const).map((u) => (
-            <button
-              key={u}
-              type="button"
-              onClick={() => onChange({ unit: u })}
-              className={`px-3 text-sm font-medium transition-colors ${
-                row.unit === u
-                  ? 'bg-white text-gray-900'
-                  : 'bg-gray-800 text-gray-500 hover:text-gray-200'
-              }`}
-            >
-              {u === 'reps' ? 'reps' : 'sec'}
-            </button>
-          ))}
-        </div>
+        <select
+          value={row.unit}
+          onChange={(e) => onChange({ unit: e.target.value as Unit })}
+          className={`w-28 flex-shrink-0 ${fieldCls}`}
+        >
+          <optgroup label="Reps">
+            <option value="reps">reps</option>
+            <option value="reps_per_leg">reps/leg</option>
+            <option value="reps_total">total reps</option>
+          </optgroup>
+          <optgroup label="Time">
+            <option value="seconds">seconds</option>
+            <option value="minutes">minutes</option>
+          </optgroup>
+          <optgroup label="Distance">
+            <option value="miles">miles</option>
+            <option value="km">km</option>
+            <option value="meters">meters</option>
+          </optgroup>
+          <optgroup label="Weight">
+            <option value="lbs">lbs</option>
+          </optgroup>
+        </select>
       </div>
 
       {/* Row 4: notes + remove */}
