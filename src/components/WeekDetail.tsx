@@ -196,6 +196,7 @@ export default function WeekDetail({ week, onClose }: Props) {
                         {e.value != null && (
                           <span className="text-amber-400 text-xs font-medium flex-shrink-0">
                             {e.value}{UNIT_SHORT[e.unit ?? ''] ?? e.unit ?? ''}
+                            {e.load != null && <span className="text-gray-500 font-normal"> @ {e.load}lbs</span>}
                           </span>
                         )}
                         {e.value == null && e.detail && (

@@ -50,6 +50,7 @@ export interface ExerciseSet {
   dayStatus?: DayStatus;  // optional: historical rows may not have this
   cause?: Cause;
   fatigue?: number;       // 1–5
+  load?: number;          // weight in lbs (separate from rep value)
 
   exercise: string;
   category: Category;

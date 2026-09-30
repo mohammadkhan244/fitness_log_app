@@ -44,6 +44,7 @@ function newRow(): RowState {
     sets: '',
     reps: '',
     unit: 'reps',
+    load: '',
     notes: '',
   };
 }
@@ -102,6 +103,7 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
           set: i + 1,
           value: r.reps ? Number(r.reps) : undefined,
           unit: r.unit as Unit,
+          load: r.load ? Number(r.load) : undefined,
           notes: r.notes || undefined,
         })),
       );

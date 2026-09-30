@@ -9,6 +9,7 @@ export interface RowState {
   sets: string;
   reps: string;
   unit: Unit;
+  load: string;   // weight in lbs, separate from rep value
   notes: string;
 }
 
@@ -33,7 +34,6 @@ const VALUE_PLACEHOLDER: Partial<Record<Unit, string>> = {
   reps: 'Reps', reps_per_leg: 'Reps/leg', reps_total: 'Total reps',
   seconds: 'Seconds', minutes: 'Minutes',
   miles: 'Miles', km: 'Km', meters: 'Meters',
-  lbs: 'Weight',
 };
 
 const fieldCls =
@@ -114,14 +114,23 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
             <option value="km">km</option>
             <option value="meters">meters</option>
           </optgroup>
-          <optgroup label="Weight">
-            <option value="lbs">lbs</option>
-          </optgroup>
         </select>
       </div>
 
-      {/* Row 4: notes + remove */}
+      {/* Row 4: weight (optional) + notes + remove */}
       <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <input
+            type="number"
+            value={row.load}
+            onChange={(e) => onChange({ load: e.target.value })}
+            placeholder="lbs"
+            inputMode="decimal"
+            step="any"
+            className={`w-16 text-center ${fieldCls}`}
+          />
+          <span className="text-xs text-gray-500 flex-shrink-0">lbs</span>
+        </div>
         <input
           type="text"
           value={row.notes}

@@ -30,7 +30,13 @@ function toNotionPage(e: ExerciseSet): object {
       ...(e.cause && { Cause: { select: { name: e.cause } } }),
       ...(e.fatigue != null && { Fatigue: { number: e.fatigue } }),
       ...(e.set != null && { Set: { number: e.set } }),
-      ...(e.notes && { Notes: { rich_text: [{ text: { content: e.notes } }] } }),
+      ...(() => {
+        const notionNotes = [
+          e.load != null ? `${e.load}lbs` : '',
+          e.notes ?? '',
+        ].filter(Boolean).join(' · ');
+        return notionNotes ? { Notes: { rich_text: [{ text: { content: notionNotes } }] } } : {};
+      })(),
       'Client ID': { rich_text: [{ text: { content: e.clientId } }] },
     },
   };
