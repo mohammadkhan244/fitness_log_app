@@ -4,9 +4,17 @@ import BodyMap from './charts/BodyMap';
 import DailyFocusCard from './DailyFocusCard';
 import InsightsTab from './InsightsTab';
 
+const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
+
+function calendarWeek(): number {
+  const days = Math.round((Date.now() - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
+  return Math.max(1, Math.floor(days / 7) + 1);
+}
+
 export default function InsightsScreen() {
   const bodyMap = useBodyMap();
   const dashboard = useDashboardData();
+  const currentWeek = calendarWeek();
 
   if (dashboard.loading) {
     return (
@@ -19,7 +27,7 @@ export default function InsightsScreen() {
   return (
     <div className="max-w-lg mx-auto p-4 space-y-6">
       {/* Today's focus */}
-      <DailyFocusCard bodyMap={bodyMap} week={dashboard.maxWeek} />
+      <DailyFocusCard bodyMap={bodyMap} week={currentWeek} />
 
       {/* Body map */}
       <div>
