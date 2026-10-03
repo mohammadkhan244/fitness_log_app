@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
-import { updateEntryDate } from '../db/sync';
-import type { ExerciseSet } from '../types';
+import { updateEntry, updateEntryDate } from '../db/sync';
+import type { Category, Equipment, ExerciseSet, Unit } from '../types';
 
 interface Props {
   week: number;
@@ -18,7 +18,6 @@ function weekDateRange(week: number): [string, string] {
   return [fmt(startMs), fmt(endMs)];
 }
 
-
 const UNIT_SHORT: Record<string, string> = {
   seconds: 's', minutes: 'min', lbs: 'lbs',
   reps_total: 'reps', reps: 'reps', reps_per_leg: 'reps/leg',
@@ -26,12 +25,33 @@ const UNIT_SHORT: Record<string, string> = {
   none: '',
 };
 
+const CATEGORIES: Category[] = [
+  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General',
+];
+const EQUIPMENTS: Equipment[] = [
+  'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',
+];
+
+interface EditState {
+  id: number;
+  notionPageId?: string;
+  exercise: string;
+  category: string;
+  equipment: string;
+  value: string;
+  unit: string;
+  load: string;
+  notes: string;
+  date: string;
+}
+
+const inputCls = 'bg-gray-900 border border-gray-700 rounded-lg px-2 h-9 text-sm text-gray-100 focus:outline-none focus:border-blue-500';
+
 export default function WeekDetail({ week, onClose }: Props) {
   const [start, end] = weekDateRange(week);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [pendingDate, setPendingDate] = useState('');
-  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
-  const [pendingEntryDate, setPendingEntryDate] = useState('');
+  const [editingEntry, setEditingEntry] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
 
   const allEntries = useLiveQuery(async () => {
@@ -52,27 +72,51 @@ export default function WeekDetail({ week, onClose }: Props) {
     byDate.set(e.date, arr);
   }
 
-  async function handleMoveEntry(entry: ExerciseSet, newDate: string) {
-    if (!newDate || newDate === entry.date) { setEditingEntryId(null); return; }
+  function openEdit(e: ExerciseSet) {
+    setEditingEntry({
+      id: e.id!,
+      notionPageId: e.notionPageId,
+      exercise: e.exercise,
+      category: e.category ?? '',
+      equipment: e.equipment ?? '',
+      value: e.value != null ? String(e.value) : '',
+      unit: e.unit ?? 'reps',
+      load: e.load != null ? String(e.load) : '',
+      notes: e.notes ?? '',
+      date: e.date,
+    });
+    setEditingDate(null);
+  }
+
+  function patchEdit(patch: Partial<EditState>) {
+    setEditingEntry((prev) => prev ? { ...prev, ...patch } : prev);
+  }
+
+  async function handleSaveEdit(s: EditState) {
+    if (!s.exercise.trim()) return;
     setSaving(true);
     try {
-      await updateEntryDate(entry.id!, entry.notionPageId, newDate);
+      await updateEntry(s.id, s.notionPageId, {
+        exercise: s.exercise.trim(),
+        category: (s.category || 'General') as Category,
+        equipment: (s.equipment || undefined) as Equipment | undefined,
+        value: s.value ? Number(s.value) : undefined,
+        unit: (s.unit || 'reps') as Unit,
+        load: s.load ? Number(s.load) : undefined,
+        notes: s.notes || undefined,
+        date: s.date,
+      });
     } finally {
       setSaving(false);
-      setEditingEntryId(null);
+      setEditingEntry(null);
     }
   }
 
   async function handleMoveDate(dayEntries: ExerciseSet[], newDate: string) {
-    if (!newDate || newDate === dayEntries[0]?.date) {
-      setEditingDate(null);
-      return;
-    }
+    if (!newDate || newDate === dayEntries[0]?.date) { setEditingDate(null); return; }
     setSaving(true);
     try {
-      await Promise.all(
-        dayEntries.map((e) => updateEntryDate(e.id!, e.notionPageId, newDate)),
-      );
+      await Promise.all(dayEntries.map((e) => updateEntryDate(e.id!, e.notionPageId, newDate)));
     } finally {
       setSaving(false);
       setEditingDate(null);
@@ -131,12 +175,9 @@ export default function WeekDetail({ week, onClose }: Props) {
                         disabled={saving}
                         className="text-xs text-blue-400 hover:text-blue-300 font-medium disabled:opacity-50"
                       >
-                        {saving ? 'Moving…' : 'Move'}
+                        {saving ? 'Moving…' : 'Move all'}
                       </button>
-                      <button
-                        onClick={() => setEditingDate(null)}
-                        className="text-xs text-gray-500 hover:text-gray-300"
-                      >
+                      <button onClick={() => setEditingDate(null)} className="text-xs text-gray-500 hover:text-gray-300">
                         Cancel
                       </button>
                     </div>
@@ -151,11 +192,11 @@ export default function WeekDetail({ week, onClose }: Props) {
                         )}
                       </span>
                       <button
-                        onClick={() => { setEditingDate(date); setPendingDate(date); setEditingEntryId(null); }}
+                        onClick={() => { setEditingDate(date); setPendingDate(date); setEditingEntry(null); }}
                         className="text-gray-600 hover:text-gray-300 text-xs px-2 py-0.5 rounded transition-colors"
-                        title="Fix date"
+                        title="Move all entries to a different date"
                       >
-                        ✎
+                        ✎ all
                       </button>
                     </>
                   )}
@@ -164,30 +205,114 @@ export default function WeekDetail({ week, onClose }: Props) {
                 {/* Entries */}
                 <div className="space-y-1">
                   {dayEntries.map((e) => (
-                    editingEntryId === e.id ? (
-                      <div key={e.id} className="flex items-center gap-2 py-1 border-b border-gray-800/50">
-                        <span className="text-xs text-gray-400 truncate flex-shrink-0 max-w-[90px]">{e.exercise}</span>
+                    editingEntry?.id === e.id ? (
+                      /* ── Full edit form ── */
+                      <div key={e.id} className="bg-gray-800 border border-gray-700 rounded-xl p-3 space-y-2 my-1">
+                        {/* Exercise name */}
+                        <input
+                          type="text"
+                          value={editingEntry.exercise}
+                          onChange={(ev) => patchEdit({ exercise: ev.target.value })}
+                          placeholder="Exercise"
+                          className={`w-full ${inputCls}`}
+                        />
+                        {/* Category + Equipment */}
+                        <div className="flex gap-2">
+                          <select
+                            value={editingEntry.category}
+                            onChange={(ev) => patchEdit({ category: ev.target.value })}
+                            className={`flex-1 ${inputCls}`}
+                          >
+                            <option value="">Category</option>
+                            {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                          </select>
+                          <select
+                            value={editingEntry.equipment}
+                            onChange={(ev) => patchEdit({ equipment: ev.target.value })}
+                            className={`flex-1 ${inputCls}`}
+                          >
+                            <option value="">Equipment</option>
+                            {EQUIPMENTS.map((eq) => <option key={eq}>{eq}</option>)}
+                          </select>
+                        </div>
+                        {/* Value + Unit + Load */}
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="number"
+                            value={editingEntry.value}
+                            onChange={(ev) => patchEdit({ value: ev.target.value })}
+                            placeholder="Value"
+                            inputMode="decimal"
+                            step="any"
+                            className={`w-16 text-center ${inputCls}`}
+                          />
+                          <select
+                            value={editingEntry.unit}
+                            onChange={(ev) => patchEdit({ unit: ev.target.value })}
+                            className={`flex-1 ${inputCls}`}
+                          >
+                            <optgroup label="Reps">
+                              <option value="reps">reps</option>
+                              <option value="reps_per_leg">reps/leg</option>
+                              <option value="reps_total">total reps</option>
+                            </optgroup>
+                            <optgroup label="Time">
+                              <option value="seconds">seconds</option>
+                              <option value="minutes">minutes</option>
+                            </optgroup>
+                            <optgroup label="Distance">
+                              <option value="miles">miles</option>
+                              <option value="km">km</option>
+                              <option value="meters">meters</option>
+                            </optgroup>
+                          </select>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <input
+                              type="number"
+                              value={editingEntry.load}
+                              onChange={(ev) => patchEdit({ load: ev.target.value })}
+                              placeholder="lbs"
+                              inputMode="decimal"
+                              step="any"
+                              className={`w-14 text-center ${inputCls}`}
+                            />
+                            <span className="text-xs text-gray-500">lbs</span>
+                          </div>
+                        </div>
+                        {/* Date */}
                         <input
                           type="date"
-                          defaultValue={e.date}
-                          onChange={(ev) => setPendingEntryDate(ev.target.value)}
-                          className="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded-lg px-2 h-7 text-xs text-gray-100 focus:outline-none focus:border-blue-500"
+                          value={editingEntry.date}
+                          onChange={(ev) => patchEdit({ date: ev.target.value })}
+                          className={`w-full ${inputCls}`}
                         />
-                        <button
-                          onClick={() => void handleMoveEntry(e, pendingEntryDate || e.date)}
-                          disabled={saving}
-                          className="text-xs text-blue-400 hover:text-blue-300 font-medium disabled:opacity-50 flex-shrink-0"
-                        >
-                          {saving ? '…' : 'Move'}
-                        </button>
-                        <button
-                          onClick={() => setEditingEntryId(null)}
-                          className="text-xs text-gray-500 hover:text-gray-300 flex-shrink-0"
-                        >
-                          ✕
-                        </button>
+                        {/* Notes */}
+                        <input
+                          type="text"
+                          value={editingEntry.notes}
+                          onChange={(ev) => patchEdit({ notes: ev.target.value })}
+                          placeholder="Notes (optional)"
+                          className={`w-full ${inputCls} placeholder-gray-600`}
+                        />
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => void handleSaveEdit(editingEntry)}
+                            disabled={saving || !editingEntry.exercise.trim()}
+                            className="flex-1 h-9 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 rounded-lg text-sm font-semibold text-white transition-colors"
+                          >
+                            {saving ? 'Saving…' : 'Save'}
+                          </button>
+                          <button
+                            onClick={() => setEditingEntry(null)}
+                            className="h-9 px-4 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     ) : (
+                      /* ── Normal row ── */
                       <div key={e.id} className="flex items-center gap-2 text-sm py-1 border-b border-gray-800/50">
                         <span className="text-gray-300 flex-1 min-w-0 truncate">{e.exercise}</span>
                         {e.set != null && (
@@ -206,9 +331,9 @@ export default function WeekDetail({ week, onClose }: Props) {
                           <span className="text-gray-700 text-xs flex-shrink-0">{e.category}</span>
                         )}
                         <button
-                          onClick={() => { setEditingEntryId(e.id!); setPendingEntryDate(e.date); setEditingDate(null); }}
-                          className="text-gray-700 hover:text-gray-400 text-xs flex-shrink-0 transition-colors"
-                          title="Fix date for this exercise"
+                          onClick={() => openEdit(e)}
+                          className="text-gray-600 hover:text-gray-300 text-xs flex-shrink-0 transition-colors px-1"
+                          title="Edit this entry"
                         >
                           ✎
                         </button>

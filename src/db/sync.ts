@@ -13,7 +13,13 @@ function weekFromDate(date: string): number {
 
 // ─── Push local entries to Notion ────────────────────────────────────────────
 
+function buildNotesString(load: number | undefined, notes: string | undefined): string | undefined {
+  const parts = [load != null ? `${load}lbs` : '', notes ?? ''].filter(Boolean);
+  return parts.length > 0 ? parts.join(' · ') : undefined;
+}
+
 function toNotionPage(e: ExerciseSet): object {
+  const noteStr = buildNotesString(e.load, e.notes);
   return {
     parent: { type: 'data_source_id', data_source_id: DS_ID },
     properties: {
@@ -30,13 +36,7 @@ function toNotionPage(e: ExerciseSet): object {
       ...(e.cause && { Cause: { select: { name: e.cause } } }),
       ...(e.fatigue != null && { Fatigue: { number: e.fatigue } }),
       ...(e.set != null && { Set: { number: e.set } }),
-      ...(() => {
-        const notionNotes = [
-          e.load != null ? `${e.load}lbs` : '',
-          e.notes ?? '',
-        ].filter(Boolean).join(' · ');
-        return notionNotes ? { Notes: { rich_text: [{ text: { content: notionNotes } }] } } : {};
-      })(),
+      ...(noteStr && { Notes: { rich_text: [{ text: { content: noteStr } }] } }),
       'Client ID': { rich_text: [{ text: { content: e.clientId } }] },
     },
   };
@@ -104,6 +104,48 @@ export async function updateEntryDate(
           Date: { date: { start: newDate } },
           Week: { number: newWeek },
           Year: { select: { name: String(new Date(newDate + 'T12:00:00').getFullYear()) } },
+        },
+      },
+    });
+  }
+}
+
+// ─── Update all editable fields on a single entry ────────────────────────────
+
+export interface EntryUpdate {
+  exercise: string;
+  category: Category;
+  equipment?: Equipment;
+  value?: number;
+  unit?: Unit;
+  load?: number;
+  notes?: string;
+  date: string;
+}
+
+export async function updateEntry(
+  id: number,
+  notionPageId: string | undefined,
+  patch: EntryUpdate,
+): Promise<void> {
+  const newWeek = weekFromDate(patch.date);
+  await db.sets.update(id, { ...patch, week: newWeek });
+  if (notionPageId) {
+    const noteStr = buildNotesString(patch.load, patch.notes);
+    await notionProxy({
+      path: `pages/${notionPageId}`,
+      method: 'PATCH',
+      body: {
+        properties: {
+          Exercise: { title: [{ text: { content: patch.exercise } }] },
+          Category: { select: { name: patch.category || 'General' } },
+          ...(patch.equipment && { Equipment: { select: { name: patch.equipment } } }),
+          ...(patch.value != null && { Value: { number: patch.value } }),
+          ...(patch.unit && patch.unit !== 'none' && { Unit: { select: { name: patch.unit } } }),
+          Date: { date: { start: patch.date } },
+          Week: { number: newWeek },
+          Year: { select: { name: String(new Date(patch.date + 'T12:00:00').getFullYear()) } },
+          ...(noteStr && { Notes: { rich_text: [{ text: { content: noteStr } }] } }),
         },
       },
     });
