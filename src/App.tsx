@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import DashboardScreen from './components/DashboardScreen';
+import ErrorBoundary from './components/ErrorBoundary';
 import InsightsScreen from './components/InsightsScreen';
 import LogScreen from './components/LogScreen';
 import SyncStatus from './components/SyncStatus';
@@ -18,6 +19,7 @@ export default function App() {
   const bottomBarHeight = tab === 'log' ? '7rem' : '3rem';
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
       <SyncStatus {...syncState} />
 
@@ -80,5 +82,6 @@ export default function App() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

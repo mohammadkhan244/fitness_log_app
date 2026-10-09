@@ -79,7 +79,10 @@ export function useSync(): SyncState {
   useEffect(() => {
     if (!navigator.onLine) return;
     void db.meta.get('notionImportedAt').then((meta) => {
-      if (!meta) void triggerImport();
+      const lastImport = meta ? Number(meta.value) : 0;
+      const hoursSince = (Date.now() - lastImport) / (1000 * 3600);
+      // Auto-import on first open or if it's been more than 12 hours
+      if (hoursSince > 12) void triggerImport();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
