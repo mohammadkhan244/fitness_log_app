@@ -12,7 +12,7 @@ function calendarWeek(): number {
 }
 
 export default function InsightsScreen() {
-  const bodyMap = useBodyMap();
+  const { strength, mobility } = useBodyMap();
   const dashboard = useDashboardData();
   const currentWeek = calendarWeek();
 
@@ -26,22 +26,22 @@ export default function InsightsScreen() {
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-6">
-      {/* Today's focus */}
-      <DailyFocusCard bodyMap={bodyMap} week={currentWeek} />
+      {/* Today's focus — strength data only */}
+      <DailyFocusCard bodyMap={strength} week={currentWeek} />
 
       {/* Body map */}
       <div>
         <h2 className="text-sm font-semibold text-gray-200 mb-1">Muscle Volume Map</h2>
         <p className="text-xs text-gray-500 mb-3">
-          All-time sets by muscle group. Tap a region to see exercises.
+          Tap a region to see exercises. Toggle Strength / Mobility to switch lenses.
         </p>
-        <BodyMap data={bodyMap} />
+        <BodyMap strength={strength} mobility={mobility} />
       </div>
 
-      {/* Suggestions */}
+      {/* Suggestions — strength data only */}
       <div>
         <h2 className="text-sm font-semibold text-gray-200 mb-3">Training Insights</h2>
-        <InsightsTab bodyMap={bodyMap} dashboard={dashboard} />
+        <InsightsTab bodyMap={strength} dashboard={dashboard} />
       </div>
     </div>
   );

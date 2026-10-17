@@ -7,7 +7,7 @@ const EQUIPMENTS: Equipment[] = [
   'Machine/Cable', 'Barbell', 'None',
 ];
 const CATEGORIES: Category[] = [
-  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General',
+  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General', 'Cardio',
 ];
 
 function ago(ts: number): string {

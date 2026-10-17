@@ -19,7 +19,7 @@ export default function DashboardScreen() {
   const [section, setSection] = useState<Section>('overview');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const data = useDashboardData();
-  const bodyMapData = useBodyMap();
+  const { strength: bodyMapData } = useBodyMap();
 
   return (
     <div className="max-w-lg mx-auto">

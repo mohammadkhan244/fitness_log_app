@@ -21,7 +21,8 @@ export type Category =
   | 'Guardian'
   | 'Benchmark'
   | 'Rest/Chaos'
-  | 'General';
+  | 'General'
+  | 'Cardio';
 export type Unit =
   | 'seconds'
   | 'minutes'

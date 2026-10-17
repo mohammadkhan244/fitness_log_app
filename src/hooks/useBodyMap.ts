@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
 
+// ─── Keyword → muscle maps ────────────────────────────────────────────────────
+
 const KEYWORD_MUSCLE: Array<{ kw: string[]; muscles: string[] }> = [
   // ── Pull / Back ───────────────────────────────────────────────────────────────
   {
@@ -149,6 +151,75 @@ const KEYWORD_MUSCLE: Array<{ kw: string[]; muscles: string[] }> = [
     kw: ['monster walk', 'side step', 'lateral walk', 'band walk'],
     muscles: ['Glutes', 'Hip Flexors'],
   },
+
+  // ── Cardio / Sport ────────────────────────────────────────────────────────────
+  {
+    kw: ['run', 'jog', 'running', 'jogging', 'treadmill'],
+    muscles: ['Quads', 'Hamstrings', 'Calves', 'Hip Flexors'],
+  },
+  {
+    kw: ['cycling', 'bike', 'biking', 'spin class', 'stationary bike'],
+    muscles: ['Quads', 'Hamstrings', 'Calves', 'Glutes'],
+  },
+  {
+    kw: ['swim', 'freestyle', 'breaststroke', 'backstroke'],
+    muscles: ['Shoulders', 'Lats', 'Triceps', 'Core'],
+  },
+  {
+    kw: ['football', 'soccer', 'basketball', 'lacrosse', 'rugby'],
+    muscles: ['Quads', 'Hamstrings', 'Calves', 'Glutes', 'Hip Flexors'],
+  },
+  {
+    kw: ['hiking', 'hike', 'trail'],
+    muscles: ['Quads', 'Glutes', 'Hamstrings', 'Calves'],
+  },
+  {
+    kw: ['rowing machine', 'row erg', 'concept2'],
+    muscles: ['Lats', 'Upper Back', 'Biceps', 'Core', 'Quads'],
+  },
+];
+
+// Exercises that are primarily stretches/mobility — not in the strength map.
+// Used when a set is timed (seconds/minutes) with no load.
+const MOBILITY_KEYWORD_MUSCLE: Array<{ kw: string[]; muscles: string[] }> = [
+  { kw: ['pancake', 'straddle', 'groin stretch', 'butterfly stretch', 'frog stretch'],
+    muscles: ['Hip Flexors', 'Hamstrings'] },
+  { kw: ['pigeon', 'figure four', 'figure-four', 'piriformis'],
+    muscles: ['Glutes', 'Hip Flexors'] },
+  { kw: ['90/90', '90 90'],
+    muscles: ['Glutes', 'Hip Flexors'] },
+  { kw: ['couch stretch', 'hip flexor stretch', 'kneeling lunge stretch', 'lunge stretch',
+         'hip opener', 'psoas stretch'],
+    muscles: ['Hip Flexors', 'Quads'] },
+  { kw: ['hamstring stretch', 'seated hamstring', 'standing hamstring', 'lying hamstring',
+         'toe touch', 'forward fold', 'standing fold'],
+    muscles: ['Hamstrings', 'Lower Back'] },
+  { kw: ["child's pose", 'childs pose', 'child pose', 'happy baby'],
+    muscles: ['Lower Back', 'Lats'] },
+  { kw: ['cat cow', 'cat-cow', 'spinal wave'],
+    muscles: ['Lower Back', 'Core'] },
+  { kw: ['thread the needle', 'thoracic rotation', 'thoracic mobility', 'thoracic',
+         't-spine', 'book opening'],
+    muscles: ['Upper Back', 'Shoulders'] },
+  { kw: ['chest stretch', 'pec stretch', 'doorway stretch', 'chest opener'],
+    muscles: ['Chest', 'Shoulders'] },
+  { kw: ['lat stretch', 'side stretch', 'overhead stretch', 'side bend'],
+    muscles: ['Lats', 'Core'] },
+  { kw: ['shoulder stretch', 'cross body', 'posterior shoulder', 'arm cross stretch'],
+    muscles: ['Shoulders', 'Rear Delts'] },
+  { kw: ['calf stretch', 'ankle mobility', 'ankle circle', 'ankle stretch',
+         'achilles stretch', 'standing calf stretch'],
+    muscles: ['Calves'] },
+  { kw: ['quad stretch', 'standing quad', 'lying quad', 'rectus femoris stretch'],
+    muscles: ['Quads', 'Hip Flexors'] },
+  { kw: ['wrist stretch', 'wrist mobility', 'wrist circle', 'finger stretch'],
+    muscles: ['Forearms'] },
+  { kw: ['neck stretch', 'neck mobility', 'neck rotation', 'neck circle', 'levator stretch'],
+    muscles: ['Traps'] },
+  { kw: ['downward dog', 'down dog', 'inchworm'],
+    muscles: ['Hamstrings', 'Calves', 'Shoulders', 'Lats'] },
+  { kw: ['hip circle', 'hip rotation', 'hip mobility', 'hip swing'],
+    muscles: ['Hip Flexors', 'Glutes'] },
 ];
 
 export const MUSCLE_LIST = [
@@ -191,13 +262,43 @@ export function mapExerciseToMuscles(exerciseName: string): Muscle[] {
   return Array.from(matched);
 }
 
+// For timed no-load sets: check mobility keywords first, fall back to strength keywords.
+function mapExerciseToMobilityMuscles(exerciseName: string): Muscle[] {
+  const lower = exerciseName.toLowerCase();
+  const matched = new Set<Muscle>();
+  for (const { kw, muscles } of MOBILITY_KEYWORD_MUSCLE) {
+    if (kw.some((k) => lower.includes(k))) {
+      for (const m of muscles) matched.add(m as Muscle);
+    }
+  }
+  // Fall back to strength keyword map for exercises that appear in both contexts
+  if (matched.size === 0) {
+    for (const m of mapExerciseToMuscles(exerciseName)) matched.add(m);
+  }
+  return Array.from(matched);
+}
+
+function isMobilitySet(s: { unit?: string; load?: number; category?: string }): boolean {
+  if (s.category === 'Cardio') return false;
+  return (s.unit === 'seconds' || s.unit === 'minutes') && s.load == null;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 export interface BodyMapData {
   muscleSets: Map<Muscle, number>;
   muscleExercises: Map<Muscle, string[]>;
   unmapped: string[];
 }
 
-export function useBodyMap(): BodyMapData {
+export interface BodyMapViews {
+  strength: BodyMapData;
+  mobility: BodyMapData;
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useBodyMap(): BodyMapViews {
   const result = useLiveQuery(async () => {
     const [sets, aliasRows] = await Promise.all([
       db.sets.toArray(),
@@ -207,32 +308,64 @@ export function useBodyMap(): BodyMapData {
     const aliasMap = new Map(aliasRows.map((a) => [a.alias.toLowerCase(), a.canonical]));
     const resolve = (name: string) => aliasMap.get(name.toLowerCase()) ?? name;
 
-    const muscleSets = new Map<Muscle, number>();
-    const muscleExercises = new Map<Muscle, Set<string>>();
-    const unmappedSet = new Set<string>();
+    const sMuscleSets = new Map<Muscle, number>();
+    const sMuscleExercises = new Map<Muscle, Set<string>>();
+    const sUnmapped = new Set<string>();
+
+    const mMuscleSets = new Map<Muscle, number>();
+    const mMuscleExercises = new Map<Muscle, Set<string>>();
+    const mUnmapped = new Set<string>();
 
     for (const s of sets) {
       const resolved = resolve(s.exercise);
-      const muscles = mapExerciseToMuscles(resolved);
-      if (muscles.length === 0) {
-        unmappedSet.add(resolved);
+
+      if (isMobilitySet(s)) {
+        const muscles = mapExerciseToMobilityMuscles(resolved);
+        if (muscles.length === 0) {
+          mUnmapped.add(resolved);
+        } else {
+          for (const m of muscles) {
+            mMuscleSets.set(m, (mMuscleSets.get(m) ?? 0) + 1);
+            const exSet = mMuscleExercises.get(m) ?? new Set<string>();
+            exSet.add(resolved);
+            mMuscleExercises.set(m, exSet);
+          }
+        }
       } else {
-        for (const m of muscles) {
-          muscleSets.set(m, (muscleSets.get(m) ?? 0) + 1);
-          const exSet = muscleExercises.get(m) ?? new Set<string>();
-          exSet.add(resolved);
-          muscleExercises.set(m, exSet);
+        const muscles = mapExerciseToMuscles(resolved);
+        if (muscles.length === 0) {
+          sUnmapped.add(resolved);
+        } else {
+          for (const m of muscles) {
+            sMuscleSets.set(m, (sMuscleSets.get(m) ?? 0) + 1);
+            const exSet = sMuscleExercises.get(m) ?? new Set<string>();
+            exSet.add(resolved);
+            sMuscleExercises.set(m, exSet);
+          }
         }
       }
     }
 
-    const muscleExList = new Map<Muscle, string[]>();
-    for (const [m, exSet] of muscleExercises) {
-      muscleExList.set(m, Array.from(exSet).sort());
+    function toList(map: Map<Muscle, Set<string>>): Map<Muscle, string[]> {
+      const out = new Map<Muscle, string[]>();
+      for (const [m, exSet] of map) out.set(m, Array.from(exSet).sort());
+      return out;
     }
 
-    return { muscleSets, muscleExercises: muscleExList, unmapped: Array.from(unmappedSet).sort() };
+    return {
+      strength: {
+        muscleSets: sMuscleSets,
+        muscleExercises: toList(sMuscleExercises),
+        unmapped: Array.from(sUnmapped).sort(),
+      },
+      mobility: {
+        muscleSets: mMuscleSets,
+        muscleExercises: toList(mMuscleExercises),
+        unmapped: Array.from(mUnmapped).sort(),
+      },
+    };
   }, []);
 
-  return result ?? { muscleSets: new Map(), muscleExercises: new Map(), unmapped: [] };
+  const empty: BodyMapData = { muscleSets: new Map(), muscleExercises: new Map(), unmapped: [] };
+  return result ?? { strength: empty, mobility: empty };
 }

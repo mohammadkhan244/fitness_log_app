@@ -22,7 +22,7 @@ interface Props {
 }
 
 const CATEGORIES: Category[] = [
-  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General',
+  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General', 'Cardio',
 ];
 const EQUIPMENTS: Equipment[] = [
   'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',

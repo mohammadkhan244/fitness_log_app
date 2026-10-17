@@ -20,7 +20,7 @@ function weekFromDate(dateStr: string): string {
 
 function defaultSession(): SessionValues {
   const t = today();
-  return { date: t, week: weekFromDate(t) };
+  return { date: t, week: weekFromDate(t), domain: 'Gym', dayStatus: 'Full' };
 }
 
 function loadSession(): SessionValues {
@@ -91,6 +91,9 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
       const base = {
         date: session.date,
         week: session.week ? Number(session.week) : undefined,
+        domain: session.domain,
+        dayStatus: session.dayStatus,
+        cause: session.dayStatus && session.dayStatus !== 'Full' ? session.cause : undefined,
       };
       const entries: Omit<ExerciseSet, 'id'>[] = valid.flatMap((r) =>
         Array.from({ length: Math.max(1, Number(r.sets) || 1) }, (_, i) => ({

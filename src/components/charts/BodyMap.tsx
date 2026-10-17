@@ -2,12 +2,14 @@ import { useState } from 'react';
 import type { BodyMapData, Muscle } from '../../hooks/useBodyMap';
 
 interface Props {
-  data: BodyMapData;
+  strength: BodyMapData;
+  mobility: BodyMapData;
 }
 
 type View = 'front' | 'back';
+type Mode = 'strength' | 'mobility';
 
-// ── Feedback computation ──────────────────────────────────────────────────────
+// ── Feedback computation (strength mode only) ─────────────────────────────────
 
 interface Feedback {
   good: string | null;
@@ -227,8 +229,6 @@ function computeFeedback(
   return { good, bad, capable };
 }
 
-// ── Analysis panel (full-width, below SVG row) ───────────────────────────────
-
 function MuscleAnalysis({
   muscle,
   muscleSets,
@@ -267,11 +267,13 @@ function MuscleAnalysis({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function BodyMap({ data }: Props) {
+export default function BodyMap({ strength, mobility }: Props) {
   const [view, setView] = useState<View>('front');
+  const [mode, setMode] = useState<Mode>('strength');
   const [selected, setSelected] = useState<Muscle | null>(null);
 
-  const { muscleSets, muscleExercises, unmapped } = data;
+  const activeData = mode === 'strength' ? strength : mobility;
+  const { muscleSets, muscleExercises, unmapped } = activeData;
   const maxSets = Math.max(1, ...Array.from(muscleSets.values()));
   const totalMuscleSets = Math.max(1, Array.from(muscleSets.values()).reduce((a, b) => a + b, 0));
 
@@ -284,10 +286,33 @@ export default function BodyMap({ data }: Props) {
     const count = muscleSets.get(muscle) ?? 0;
     if (count === 0) return '#1f2937';
     const t = Math.min(1, count / maxSets);
-    const r = Math.round(161 + t * 84);
-    const g = Math.round(81 + t * 77);
-    const b = Math.round(8 + t * 3);
-    return `rgb(${r},${g},${b})`;
+    if (mode === 'strength') {
+      const r = Math.round(161 + t * 84);
+      const g = Math.round(81  + t * 77);
+      const b = Math.round(8   + t * 3);
+      return `rgb(${r},${g},${b})`;
+    } else {
+      // Blue-cyan gradient for mobility
+      const r = Math.round(7   + t * (56  - 7));
+      const g = Math.round(89  + t * (189 - 89));
+      const b = Math.round(133 + t * (248 - 133));
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+
+  function legendColor(t: number): string {
+    if (t === 0) return '#1f2937';
+    if (mode === 'strength') {
+      const r = Math.round(161 + t * 84);
+      const g = Math.round(81  + t * 77);
+      const b = Math.round(8   + t * 3);
+      return `rgb(${r},${g},${b})`;
+    } else {
+      const r = Math.round(7   + t * (56  - 7));
+      const g = Math.round(89  + t * (189 - 89));
+      const b = Math.round(133 + t * (248 - 133));
+      return `rgb(${r},${g},${b})`;
+    }
   }
 
   function opacity(muscle: Muscle): number {
@@ -325,22 +350,44 @@ export default function BodyMap({ data }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Front/Back toggle */}
-      <div className="flex gap-1 bg-gray-800 rounded-lg p-1 w-fit">
-        {(['front', 'back'] as View[]).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            className={`px-4 h-8 rounded-md text-xs font-medium capitalize transition-colors ${
-              view === v ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            {v}
-          </button>
-        ))}
+      {/* Toggle row: Strength/Mobility + Front/Back */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
+          {(['strength', 'mobility'] as Mode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => { setMode(m); setSelected(null); }}
+              className={`px-3 h-8 rounded-md text-xs font-medium capitalize transition-colors ${
+                mode === m ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
+          {(['front', 'back'] as View[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-3 h-8 rounded-md text-xs font-medium capitalize transition-colors ${
+                view === v ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* SVG Body — full width, arms outstretched */}
+      {/* Mode label */}
+      <p className="text-xs text-gray-600">
+        {mode === 'strength'
+          ? 'Reps and loaded sets — each cell shows strength volume.'
+          : 'Timed, unloaded holds and stretches — each cell shows mobility sessions.'}
+      </p>
+
+      {/* SVG Body */}
       <svg viewBox="0 0 260 258" className="w-full" style={{ display: 'block' }}>
         {/* Head */}
         <circle cx="130" cy="16" r="13" fill="#374151" />
@@ -348,29 +395,20 @@ export default function BodyMap({ data }: Props) {
         <rect x="123" y="28" width="14" height="7" fill="#374151" />
 
         {view === 'front' && <>
-          {/* Shoulders — bridge between arm and torso */}
           <rect x="58" y="35" width="32" height="22" rx="6" {...regionProps('Shoulders')} />
           <rect x="170" y="35" width="32" height="22" rx="6" {...regionProps('Shoulders')} />
-          {/* Chest — center torso */}
           <rect x="90" y="35" width="80" height="38" rx="7" {...regionProps('Chest')} />
-          {/* Biceps — upper arm, clear of torso */}
           <rect x="32" y="55" width="26" height="38" rx="6" {...regionProps('Biceps')} />
           <rect x="202" y="55" width="26" height="38" rx="6" {...regionProps('Biceps')} />
-          {/* Forearms — lower arm */}
           <rect x="24" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
           <rect x="214" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
-          {/* Core */}
           <rect x="90" y="75" width="80" height="44" rx="6" {...regionProps('Core')} />
-          {/* Hip Flexors */}
           <rect x="90" y="121" width="80" height="16" rx="4" {...regionProps('Hip Flexors')} />
-          {/* Quads */}
           <rect x="82" y="139" width="36" height="54" rx="7" {...regionProps('Quads')} />
           <rect x="142" y="139" width="36" height="54" rx="7" {...regionProps('Quads')} />
-          {/* Calves */}
           <rect x="82" y="195" width="34" height="42" rx="6" {...regionProps('Calves')} />
           <rect x="144" y="195" width="34" height="42" rx="6" {...regionProps('Calves')} />
 
-          {/* ── Labels ── */}
           <PctLabel muscle="Shoulders" x={74} y={49} fs={6} />
           <PctLabel muscle="Shoulders" x={186} y={49} fs={6} />
           <text x="130" y="52" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" pointerEvents="none">Chest</text>
@@ -395,35 +433,24 @@ export default function BodyMap({ data }: Props) {
         </>}
 
         {view === 'back' && <>
-          {/* Rear Delts — shoulder-width flanks */}
           <rect x="58" y="35" width="32" height="22" rx="6" {...regionProps('Rear Delts')} />
           <rect x="170" y="35" width="32" height="22" rx="6" {...regionProps('Rear Delts')} />
-          {/* Traps — upper center */}
           <rect x="90" y="35" width="80" height="26" rx="6" {...regionProps('Traps')} />
-          {/* Upper Back */}
           <rect x="92" y="63" width="76" height="36" rx="6" {...regionProps('Upper Back')} />
-          {/* Lats — torso sides, clear of triceps */}
           <rect x="62" y="61" width="30" height="48" rx="6" {...regionProps('Lats')} />
           <rect x="168" y="61" width="30" height="48" rx="6" {...regionProps('Lats')} />
-          {/* Triceps — upper arm */}
           <rect x="32" y="55" width="26" height="38" rx="6" {...regionProps('Triceps')} />
           <rect x="202" y="55" width="26" height="38" rx="6" {...regionProps('Triceps')} />
-          {/* Forearms */}
           <rect x="24" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
           <rect x="214" y="95" width="22" height="32" rx="5" {...regionProps('Forearms')} />
-          {/* Lower Back */}
           <rect x="92" y="101" width="76" height="26" rx="5" {...regionProps('Lower Back')} />
-          {/* Glutes */}
           <rect x="84" y="129" width="38" height="34" rx="7" {...regionProps('Glutes')} />
           <rect x="138" y="129" width="38" height="34" rx="7" {...regionProps('Glutes')} />
-          {/* Hamstrings */}
           <rect x="84" y="165" width="36" height="54" rx="7" {...regionProps('Hamstrings')} />
           <rect x="140" y="165" width="36" height="54" rx="7" {...regionProps('Hamstrings')} />
-          {/* Calves */}
           <rect x="84" y="221" width="34" height="36" rx="6" {...regionProps('Calves')} />
           <rect x="142" y="221" width="34" height="36" rx="6" {...regionProps('Calves')} />
 
-          {/* ── Labels ── */}
           <PctLabel muscle="Rear Delts" x={74} y={49} fs={6} />
           <PctLabel muscle="Rear Delts" x={186} y={49} fs={6} />
           <text x="130" y="50" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" pointerEvents="none">Traps</text>
@@ -453,13 +480,13 @@ export default function BodyMap({ data }: Props) {
         </>}
       </svg>
 
-      {/* Muscle detail — below figure */}
+      {/* Muscle detail panel */}
       {selected ? (
         <div className="border border-gray-800 rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-amber-400">{selected}</span>
             <div>
-              <span className="text-xs text-gray-400">{selectedCount} sets</span>
+              <span className="text-xs text-gray-400">{selectedCount} {mode === 'mobility' ? 'sessions' : 'sets'}</span>
               {pct(selected) > 0 && (
                 <span className="text-xs text-amber-500 ml-2 font-semibold">{pct(selected)}%</span>
               )}
@@ -480,11 +507,14 @@ export default function BodyMap({ data }: Props) {
               </ul>
             </details>
           )}
-          <MuscleAnalysis
-            muscle={selected}
-            muscleSets={muscleSets}
-            total={totalMuscleSets}
-          />
+          {/* Strength analysis only — mobility map doesn't have push/pull context */}
+          {mode === 'strength' && (
+            <MuscleAnalysis
+              muscle={selected}
+              muscleSets={muscleSets}
+              total={totalMuscleSets}
+            />
+          )}
         </div>
       ) : (
         <p className="text-xs text-gray-600 text-center">Tap a region to see exercises</p>
@@ -493,18 +523,16 @@ export default function BodyMap({ data }: Props) {
       {/* Colour scale legend */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-gray-600">Less</span>
-        {[0, 0.25, 0.5, 0.75, 1].map((t) => {
-          const r = Math.round(161 + t * 84);
-          const g = Math.round(81 + t * 77);
-          const b = Math.round(8 + t * 3);
-          return (
-            <span
-              key={t}
-              className="w-5 h-3 rounded-sm"
-              style={{ backgroundColor: t === 0 ? '#1f2937' : `rgb(${r},${g},${b})`, opacity: t === 0 ? 1 : 0.35 + 0.65 * t }}
-            />
-          );
-        })}
+        {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+          <span
+            key={t}
+            className="w-5 h-3 rounded-sm"
+            style={{
+              backgroundColor: legendColor(t),
+              opacity: t === 0 ? 1 : 0.35 + 0.65 * t,
+            }}
+          />
+        ))}
         <span className="text-xs text-gray-600">More</span>
       </div>
 
