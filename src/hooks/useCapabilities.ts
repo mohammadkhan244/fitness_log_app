@@ -23,7 +23,10 @@ export interface CapabilityResult {
   status: CapabilityStatus;
   lastCleanDate?: string;
   flagDetail?: string;
+  flagSet?: ExerciseSet;   // the specific set that triggered the flag
   transferDetail?: string;
+  demoSets: ExerciseSet[]; // all demonstrated_by sets in the window (for expanded view)
+  buildSets: ExerciseSet[]; // all built_by sets in the window (for expanded view)
 }
 
 function isCategoryMatcher(m: ExerciseMatcher): m is CategoryMatcher {
@@ -83,6 +86,9 @@ function computeStatus(
         capability,
         status: 'flagged',
         flagDetail: `${s.exercise} showed "${kw}" signal on ${s.date}.`,
+        flagSet: s,
+        demoSets,
+        buildSets,
       };
     }
   }
@@ -113,6 +119,9 @@ function computeStatus(
           capability,
           status: 'flagged',
           flagDetail: `${lastSet.exercise} last logged ${lastSet.date} — absent from the last 6 weeks.`,
+          flagSet: lastSet,
+          demoSets,
+          buildSets,
         };
       }
     }
@@ -128,6 +137,8 @@ function computeStatus(
       status: 'confirmed-transfer',
       lastCleanDate: sortedDemo[0].date,
       transferDetail: `${sortedBuild[0].exercise} → ${sortedDemo[0].exercise}, transfer confirmed.`,
+      demoSets,
+      buildSets,
     };
   }
 
@@ -136,14 +147,16 @@ function computeStatus(
       capability,
       status: 'demonstrated',
       lastCleanDate: sortedDemo[0].date,
+      demoSets,
+      buildSets,
     };
   }
 
   if (sortedBuild.length > 0) {
-    return { capability, status: 'building' };
+    return { capability, status: 'building', demoSets, buildSets };
   }
 
-  return { capability, status: 'untested' };
+  return { capability, status: 'untested', demoSets: [], buildSets: [] };
 }
 
 export function useCapabilities(): CapabilityResult[] {
@@ -165,5 +178,10 @@ export function useCapabilities(): CapabilityResult[] {
     return CAPABILITIES.map((cap) => computeStatus(cap, resolved, windowStartDate));
   }, []);
 
-  return result ?? CAPABILITIES.map((cap) => ({ capability: cap, status: 'untested' as const }));
+  return result ?? CAPABILITIES.map((cap) => ({
+    capability: cap,
+    status: 'untested' as const,
+    demoSets: [],
+    buildSets: [],
+  }));
 }
