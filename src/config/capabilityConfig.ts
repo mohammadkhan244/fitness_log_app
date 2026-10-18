@@ -72,8 +72,8 @@ export const CAPABILITIES: Capability[] = [
     id: 'pulling-tendon-capacity',
     name: 'Pulling tendon capacity (fast-tempo transfer)',
     demonstratedBy: [
-      { nameContains: 'Pull-up' },                              // 'Pull-up', 'Pull-ups', 'Weighted pull-ups'
-      { nameContains: 'Pullup' },                               // 'Pullups', 'Ring pullups', 'Weighted pullups'
+      { nameContains: 'Pull-up', category: 'Fast Tempo' }, // 'Pull-up', 'Pull-ups', 'Weighted pull-ups' — Fast Tempo only
+      { nameContains: 'Pullup',  category: 'Fast Tempo' }, // 'Pullups', 'Ring pullups', 'Weighted pullups' — Fast Tempo only
       { nameContains: 'Lat pulldown', category: 'Fast Tempo' }, // any Lat pulldown variant logged as Fast Tempo
     ],
     fastTempoFallback: true, // also catches other Fast Tempo pulling exercises
