@@ -14,4 +14,3 @@ Durable training conclusions and classification decisions. This is the source of
 - Duck walking: reclassified as slow-tempo lower-body movement requiring 72-hour separation from fast-tempo lower work, not Guardian filler.
 - Shadow boxing: identified as the driver of rotational/twisting back soreness — flagged for isolation and moderation.
 - Handwritten notes serve internalization; AI logging serves raw data capture — do not retype handwritten reflections into the app.
-- Slow-tempo pull-ups deemed dangerous — avoid slow-tempo work that isn't on the ground or close to it. Scope: this excludes moving through range under control while fatigued (slow-tempo pulling reps); static holds like weighted dead hangs are not considered dangerous and remain in the program.
