@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBodyMap } from '../hooks/useBodyMap';
 import { useDashboardData } from '../hooks/useDashboardData';
 import BodyMap from './charts/BodyMap';
+import CapabilitiesSection from './CapabilitiesSection';
 import DailyFocusCard from './DailyFocusCard';
 import InsightsTab from './InsightsTab';
 import MobilityFocusCard from './MobilityFocusCard';
@@ -58,6 +59,12 @@ export default function InsightsScreen() {
         ) : (
           <MobilityInsightsTab strength={strength} mobility={mobility} />
         )}
+      </div>
+
+      {/* Capabilities — evidence-based physical capacity status, independent of body map toggle */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-200 mb-3">Capabilities</h2>
+        <CapabilitiesSection />
       </div>
     </div>
   );
