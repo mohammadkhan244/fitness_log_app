@@ -1,4 +1,6 @@
 import type { BodyMapData, Muscle } from '../hooks/useBodyMap';
+import { useCapabilities } from '../hooks/useCapabilities';
+import type { CapabilityResult } from '../hooks/useCapabilities';
 
 interface Props {
   mobility: BodyMapData;
@@ -10,7 +12,29 @@ const FOCUS_ORDER: Muscle[] = [
   'Upper Back', 'Calves', 'Forearms', 'Glutes', 'Quads',
 ];
 
+// Which capability IDs prove a given muscle's mobility is already demonstrated.
+// A muscle is excluded from Today's Mobility Focus when any of its listed
+// capabilities has status 'demonstrated' or 'confirmed-transfer'.
+const CAPABILITY_COVERS: Partial<Record<Muscle, string[]>> = {
+  'Forearms': ['wrist-extension'],
+  'Calves':   ['ankle-dorsiflexion'],
+};
+
+function buildCoveredMuscles(capabilities: CapabilityResult[]): Set<Muscle> {
+  const proven = new Set(
+    capabilities
+      .filter((r) => r.status === 'demonstrated' || r.status === 'confirmed-transfer')
+      .map((r) => r.capability.id),
+  );
+  const covered = new Set<Muscle>();
+  for (const [muscle, capIds] of Object.entries(CAPABILITY_COVERS) as [Muscle, string[]][]) {
+    if (capIds.some((id) => proven.has(id))) covered.add(muscle);
+  }
+  return covered;
+}
+
 interface MuscleMeta {
+  displayName?: string;
   why: string;
   exercises: string[];
 }
@@ -41,6 +65,7 @@ const MUSCLE_META: Record<string, MuscleMeta> = {
     exercises: ['Standing calf stretch', 'Ankle mobility circles', 'Downward dog'],
   },
   'Forearms': {
+    displayName: 'Wrist extension',
     why: 'Wrist extension range limits handstand, pushup depth, and any loaded front rack position. Wrist mobility is the silent bottleneck for pressing and overhead skill work.',
     exercises: ['Wrist extension stretch', 'Prayer stretch', 'Wrist circles'],
   },
@@ -54,22 +79,31 @@ const MUSCLE_META: Record<string, MuscleMeta> = {
   },
 };
 
-function findFocus(muscleSets: Map<Muscle, number>): { muscle: Muscle; sessions: number } {
+function findFocus(
+  muscleSets: Map<Muscle, number>,
+  covered: Set<Muscle>,
+): { muscle: Muscle; sessions: number } | null {
+  const candidates = FOCUS_ORDER.filter((m) => !covered.has(m));
+  if (candidates.length === 0) return null;
   // First: any zero-session muscle in priority order
-  const zeroMuscle = FOCUS_ORDER.find((m) => (muscleSets.get(m) ?? 0) === 0);
+  const zeroMuscle = candidates.find((m) => (muscleSets.get(m) ?? 0) === 0);
   if (zeroMuscle) return { muscle: zeroMuscle, sessions: 0 };
-  // Fallback: lowest session count in priority order
-  return FOCUS_ORDER
+  // Fallback: lowest session count
+  return candidates
     .map((m) => ({ muscle: m, sessions: muscleSets.get(m) ?? 0 }))
     .reduce((min, curr) => (curr.sessions < min.sessions ? curr : min));
 }
 
 export default function MobilityFocusCard({ mobility }: Props) {
-  const { muscle, sessions } = findFocus(mobility.muscleSets);
-  const meta = MUSCLE_META[muscle];
+  const capabilities = useCapabilities();
+  const covered = buildCoveredMuscles(capabilities);
 
-  // All focus muscles have solid coverage
-  const allCovered = FOCUS_ORDER.every((m) => (mobility.muscleSets.get(m) ?? 0) >= 3);
+  const candidates = FOCUS_ORDER.filter((m) => !covered.has(m));
+  const allCovered =
+    candidates.length === 0 || candidates.every((m) => (mobility.muscleSets.get(m) ?? 0) >= 3);
+
+  const focus = allCovered ? null : findFocus(mobility.muscleSets, covered);
+  const meta = focus ? MUSCLE_META[focus.muscle] : null;
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
@@ -77,7 +111,7 @@ export default function MobilityFocusCard({ mobility }: Props) {
         Today's Mobility Focus
       </p>
 
-      {allCovered ? (
+      {!focus ? (
         <div className="space-y-1">
           <p className="text-sm font-semibold text-cyan-400">All key areas covered</p>
           <p className="text-xs text-gray-400 leading-relaxed">
@@ -88,9 +122,13 @@ export default function MobilityFocusCard({ mobility }: Props) {
       ) : (
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-cyan-400">{muscle}</span>
+            <span className="text-sm font-semibold text-cyan-400">
+              {meta?.displayName ?? focus.muscle}
+            </span>
             <span className="text-xs text-gray-600">
-              {sessions === 0 ? 'no sessions yet' : `${sessions} session${sessions !== 1 ? 's' : ''}`}
+              {focus.sessions === 0
+                ? 'no sessions yet'
+                : `${focus.sessions} session${focus.sessions !== 1 ? 's' : ''}`}
             </span>
           </div>
 
