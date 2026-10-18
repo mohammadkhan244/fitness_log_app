@@ -4,6 +4,8 @@ import type { BodyMapData, Muscle } from '../../hooks/useBodyMap';
 interface Props {
   strength: BodyMapData;
   mobility: BodyMapData;
+  mode: Mode;
+  onModeChange: (mode: Mode) => void;
 }
 
 type View = 'front' | 'back';
@@ -267,9 +269,8 @@ function MuscleAnalysis({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function BodyMap({ strength, mobility }: Props) {
+export default function BodyMap({ strength, mobility, mode, onModeChange }: Props) {
   const [view, setView] = useState<View>('front');
-  const [mode, setMode] = useState<Mode>('strength');
   const [selected, setSelected] = useState<Muscle | null>(null);
 
   const activeData = mode === 'strength' ? strength : mobility;
@@ -356,7 +357,7 @@ export default function BodyMap({ strength, mobility }: Props) {
           {(['strength', 'mobility'] as Mode[]).map((m) => (
             <button
               key={m}
-              onClick={() => { setMode(m); setSelected(null); }}
+              onClick={() => { onModeChange(m); setSelected(null); }}
               className={`px-3 h-8 rounded-md text-xs font-medium capitalize transition-colors ${
                 mode === m ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}

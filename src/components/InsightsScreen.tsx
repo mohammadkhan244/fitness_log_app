@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useBodyMap } from '../hooks/useBodyMap';
 import { useDashboardData } from '../hooks/useDashboardData';
 import BodyMap from './charts/BodyMap';
 import DailyFocusCard from './DailyFocusCard';
 import InsightsTab from './InsightsTab';
+import MobilityInsightsTab from './MobilityInsightsTab';
 
 const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
 
@@ -15,6 +17,7 @@ export default function InsightsScreen() {
   const { strength, mobility } = useBodyMap();
   const dashboard = useDashboardData();
   const currentWeek = calendarWeek();
+  const [bodyMapMode, setBodyMapMode] = useState<'strength' | 'mobility'>('strength');
 
   if (dashboard.loading) {
     return (
@@ -29,19 +32,30 @@ export default function InsightsScreen() {
       {/* Today's focus — strength data only */}
       <DailyFocusCard bodyMap={strength} week={currentWeek} />
 
-      {/* Body map */}
+      {/* Body map — mode is lifted here so the insights section below stays in sync */}
       <div>
         <h2 className="text-sm font-semibold text-gray-200 mb-1">Muscle Volume Map</h2>
         <p className="text-xs text-gray-500 mb-3">
           Tap a region to see exercises. Toggle Strength / Mobility to switch lenses.
         </p>
-        <BodyMap strength={strength} mobility={mobility} />
+        <BodyMap
+          strength={strength}
+          mobility={mobility}
+          mode={bodyMapMode}
+          onModeChange={setBodyMapMode}
+        />
       </div>
 
-      {/* Suggestions — strength data only */}
+      {/* Insights — switches with the body map toggle */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-200 mb-3">Training Insights</h2>
-        <InsightsTab bodyMap={strength} dashboard={dashboard} />
+        <h2 className="text-sm font-semibold text-gray-200 mb-3">
+          {bodyMapMode === 'strength' ? 'Training Insights' : 'Mobility Insights'}
+        </h2>
+        {bodyMapMode === 'strength' ? (
+          <InsightsTab bodyMap={strength} dashboard={dashboard} />
+        ) : (
+          <MobilityInsightsTab strength={strength} mobility={mobility} />
+        )}
       </div>
     </div>
   );
