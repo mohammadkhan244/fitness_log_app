@@ -34,7 +34,7 @@ const MOBILITY_EXERCISES: Partial<Record<Muscle, string[]>> = {
   'Forearms':    ['Wrist extension stretch', 'Prayer stretch', 'Wrist circles'],
   'Glutes':      ['Pigeon pose', '90/90 hip rotation', 'Figure-four stretch'],
   'Quads':       ['Couch stretch', 'Standing quad stretch', 'Lying quad stretch'],
-  'Lats':        ['Lat stretch (overhead)', 'Side bend stretch', 'Child's pose'],
+  'Lats':        ['Lat stretch (overhead)', 'Side bend stretch', "Child's pose"],
   'Chest':       ['Doorway chest stretch', 'Pec stretch on floor'],
   'Core':        ['Cobra pose', 'Standing back bend', 'Side stretch'],
   'Traps':       ['Neck side stretch', 'Levator scapulae stretch'],
