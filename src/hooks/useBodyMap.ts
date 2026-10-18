@@ -212,7 +212,7 @@ const MOBILITY_KEYWORD_MUSCLE: Array<{ kw: string[]; muscles: string[] }> = [
     muscles: ['Calves'] },
   { kw: ['quad stretch', 'standing quad', 'lying quad', 'rectus femoris stretch'],
     muscles: ['Quads', 'Hip Flexors'] },
-  { kw: ['wrist stretch', 'wrist mobility', 'wrist circle', 'finger stretch'],
+  { kw: ['wrist stretch', 'wrist mobility', 'wrist circle', 'wrist rotation', 'finger stretch'],
     muscles: ['Forearms'] },
   { kw: ['neck stretch', 'neck mobility', 'neck rotation', 'neck circle', 'levator stretch'],
     muscles: ['Traps'] },
