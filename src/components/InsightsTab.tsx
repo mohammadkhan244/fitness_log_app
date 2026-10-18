@@ -1,6 +1,31 @@
 import type { BodyMapData, Muscle } from '../hooks/useBodyMap';
 import { MUSCLE_LIST } from '../hooks/useBodyMap';
+import { useCapabilities } from '../hooks/useCapabilities';
+import type { CapabilityResult } from '../hooks/useCapabilities';
 import type { DashboardData } from '../hooks/useDashboardData';
+
+// Capability IDs that, when Demonstrated or Confirmed Transfer, suppress a
+// specific neglected-structural-muscle Tip card in Training Insights.
+// Only add entries here when the capability directly validates the claim the
+// Tip card makes — not for incidental coverage.
+const CAPABILITY_SUPPRESSES: Partial<Record<string, Muscle[]>> = {
+  'pulling-tendon-capacity': ['Forearms'],
+  // Forearms: pull-up being Demonstrated means grip held — the "caps pulling
+  // strength" claim in the Low Forearms Tip is directly contradicted.
+};
+
+function buildSuppressedMuscles(capabilities: CapabilityResult[]): Set<Muscle> {
+  const proven = new Set(
+    capabilities
+      .filter((r) => r.status === 'demonstrated' || r.status === 'confirmed-transfer')
+      .map((r) => r.capability.id),
+  );
+  const suppressed = new Set<Muscle>();
+  for (const [capId, muscles] of Object.entries(CAPABILITY_SUPPRESSES)) {
+    if (proven.has(capId) && muscles) muscles.forEach((m) => suppressed.add(m));
+  }
+  return suppressed;
+}
 
 interface Props {
   bodyMap: BodyMapData;
@@ -52,6 +77,7 @@ const NEGLECTED_ALTER_EGO: Partial<Record<Muscle, (sets: number, pctOfAvg: numbe
 function generateSuggestions(
   muscleSets: Map<Muscle, number>,
   totalSets: number,
+  suppressed: Set<Muscle> = new Set(),
 ): Suggestion[] {
   const suggestions: Suggestion[] = [];
   if (totalSets === 0) return suggestions;
@@ -202,7 +228,7 @@ function generateSuggestions(
 
   for (const { m, threshold } of neglected) {
     const sets = muscleSets.get(m) ?? 0;
-    if (sets > 0 && sets < threshold) {
+    if (sets > 0 && sets < threshold && !suppressed.has(m)) {
       const pctOfAvg = Math.round((sets / avg) * 100);
       const egoFn = NEGLECTED_ALTER_EGO[m];
       suggestions.push({
@@ -230,6 +256,8 @@ const PRIORITY_STYLE: Record<Priority, { badge: string; border: string; label: s
 
 export default function InsightsTab({ bodyMap, dashboard }: Props) {
   const { muscleSets } = bodyMap;
+  const capabilities = useCapabilities();
+  const suppressed = buildSuppressedMuscles(capabilities);
 
   if (dashboard.loading) {
     return <p className="text-xs text-gray-600 py-4 text-center">Loading…</p>;
@@ -242,7 +270,7 @@ export default function InsightsTab({ bodyMap, dashboard }: Props) {
     );
   }
 
-  const suggestions = generateSuggestions(muscleSets, dashboard.totalSets);
+  const suggestions = generateSuggestions(muscleSets, dashboard.totalSets, suppressed);
 
   return (
     <div className="space-y-3">
