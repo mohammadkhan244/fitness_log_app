@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CapabilitiesScreen from './components/CapabilitiesScreen';
 import DashboardScreen from './components/DashboardScreen';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -6,9 +6,18 @@ import InsightsScreen from './components/InsightsScreen';
 import LogScreen from './components/LogScreen';
 import ScienceScreen from './components/ScienceScreen';
 import SyncStatus from './components/SyncStatus';
+import { useCapabilityBadge } from './hooks/useBadge';
 import { useSync } from './hooks/useSync';
 
 type Tab = 'log' | 'dashboard' | 'insights' | 'capabilities' | 'science';
+
+// Extend Navigator type for Web App Badging API (not yet in all TS lib versions)
+declare global {
+  interface Navigator {
+    setAppBadge?(count?: number): Promise<void>;
+    clearAppBadge?(): Promise<void>;
+  }
+}
 
 export default function App() {
   const syncState = useSync();
@@ -19,6 +28,17 @@ export default function App() {
   const [saveMsg, setSaveMsg] = useState('');
   const logSaveTrigger = useRef<() => void>(() => {});
 
+  const { hasBadge, acknowledge } = useCapabilityBadge();
+
+  // Sync badge count to PWA app icon via Web App Badging API
+  useEffect(() => {
+    if (hasBadge) {
+      navigator.setAppBadge?.(1)?.catch(() => {});
+    } else {
+      navigator.clearAppBadge?.()?.catch(() => {});
+    }
+  }, [hasBadge]);
+
   function navigateToScience(capabilityId: string) {
     setScienceTarget(capabilityId);
     setTab('science');
@@ -26,6 +46,7 @@ export default function App() {
 
   function navigateToCapabilities(capabilityId: string) {
     setCapabilitiesTarget(capabilityId);
+    acknowledge();
     setTab('capabilities');
   }
 
@@ -100,6 +121,7 @@ export default function App() {
             <button
               key={id}
               onClick={() => {
+                if (id === 'capabilities') acknowledge();
                 if (id !== 'science') setScienceTarget(undefined);
                 if (id !== 'capabilities') setCapabilitiesTarget(undefined);
                 setTab(id);
@@ -108,7 +130,12 @@ export default function App() {
                 tab === id ? 'text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
             >
-              {label}
+              <span className="relative inline-block">
+                {label}
+                {id === 'capabilities' && hasBadge && (
+                  <span className="absolute -top-1.5 -right-2.5 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </span>
             </button>
           ))}
         </div>
