@@ -4,6 +4,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import BodyMap from './charts/BodyMap';
 import DailyFocusCard from './DailyFocusCard';
 import InsightsTab from './InsightsTab';
+import MobilityFocusCard from './MobilityFocusCard';
 import MobilityInsightsTab from './MobilityInsightsTab';
 
 const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
@@ -29,8 +30,9 @@ export default function InsightsScreen() {
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-6">
-      {/* Today's focus — strength data only */}
+      {/* Dual focus cards — always visible regardless of body map toggle */}
       <DailyFocusCard bodyMap={strength} week={currentWeek} />
+      <MobilityFocusCard mobility={mobility} />
 
       {/* Body map — mode is lifted here so the insights section below stays in sync */}
       <div>
