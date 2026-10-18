@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useCapabilities } from '../hooks/useCapabilities';
 import { NEGATIVE_SIGNAL_KEYWORDS } from '../config/capabilityConfig';
 import type { CapabilityResult, CapabilityStatus } from '../hooks/useCapabilities';
@@ -215,12 +215,22 @@ function collapsedDetail(result: CapabilityResult): { text: string; color: strin
 
 // ─── CapabilityRow ────────────────────────────────────────────────────────────
 
-function CapabilityRow({ result }: { result: CapabilityResult }) {
+function CapabilityRow({
+  result,
+  onNavigateToScience,
+}: {
+  result: CapabilityResult;
+  onNavigateToScience?: (id: string) => void;
+}) {
   const [open, setOpen] = useState(false);
+  const refStandardRef = useRef<HTMLDivElement>(null);
   const { capability, status } = result;
   const style = STATUS_STYLE[status];
   const { text: detail, color: detailColor } = collapsedDetail(result);
   const canExpand = status !== 'untested';
+
+  const hasSources = capability.sources && capability.sources.length > 0;
+  const hasRefStandard = Boolean(capability.referenceStandard);
 
   return (
     <div className={`border rounded-xl overflow-hidden ${style.border}`}>
@@ -249,9 +259,38 @@ function CapabilityRow({ result }: { result: CapabilityResult }) {
       {/* Expanded panel */}
       {open && (
         <div className="border-t border-gray-800 px-4 pb-4 pt-3 space-y-4">
+          {/* Mechanism block — science note + navigation link */}
+          {(capability.science || hasSources || hasRefStandard) && (
+            <div className="space-y-2">
+              {capability.science && (
+                <p className="text-xs text-gray-500/90 leading-relaxed">{capability.science}</p>
+              )}
+              {hasSources ? (
+                <button
+                  type="button"
+                  onClick={() => onNavigateToScience?.(capability.id)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 active:text-indigo-200 transition-colors"
+                >
+                  Learn the mechanism →
+                </button>
+              ) : hasRefStandard ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    refStandardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                  }
+                  className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+                >
+                  See reference standard ↓
+                </button>
+              ) : null}
+            </div>
+          )}
+
           <EvidencePanel result={result} />
+
           {capability.referenceStandard && (
-            <div className="border border-gray-800 rounded-lg p-3 space-y-1">
+            <div ref={refStandardRef} className="border border-gray-800 rounded-lg p-3 space-y-1">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">General reference</p>
               <p className="text-xs text-gray-500 leading-relaxed">{capability.referenceStandard}</p>
             </div>
@@ -264,7 +303,11 @@ function CapabilityRow({ result }: { result: CapabilityResult }) {
 
 // ─── CapabilitiesSection ──────────────────────────────────────────────────────
 
-export default function CapabilitiesSection() {
+export default function CapabilitiesSection({
+  onNavigateToScience,
+}: {
+  onNavigateToScience?: (id: string) => void;
+}) {
   const results = useCapabilities();
 
   return (
@@ -273,7 +316,11 @@ export default function CapabilitiesSection() {
         Last 12 weeks. Tap a card to see the evidence. Untested = no data yet — not a weakness.
       </p>
       {results.map((r) => (
-        <CapabilityRow key={r.capability.id} result={r} />
+        <CapabilityRow
+          key={r.capability.id}
+          result={r}
+          onNavigateToScience={onNavigateToScience}
+        />
       ))}
     </div>
   );

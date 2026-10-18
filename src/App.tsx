@@ -4,17 +4,24 @@ import DashboardScreen from './components/DashboardScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import InsightsScreen from './components/InsightsScreen';
 import LogScreen from './components/LogScreen';
+import ScienceScreen from './components/ScienceScreen';
 import SyncStatus from './components/SyncStatus';
 import { useSync } from './hooks/useSync';
 
-type Tab = 'log' | 'dashboard' | 'insights' | 'capabilities';
+type Tab = 'log' | 'dashboard' | 'insights' | 'capabilities' | 'science';
 
 export default function App() {
   const syncState = useSync();
   const [tab, setTab] = useState<Tab>('log');
+  const [scienceTarget, setScienceTarget] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const logSaveTrigger = useRef<() => void>(() => {});
+
+  function navigateToScience(capabilityId: string) {
+    setScienceTarget(capabilityId);
+    setTab('science');
+  }
 
   // On the log tab the bottom bar is taller (save row + tab row)
   const bottomBarHeight = tab === 'log' ? '7rem' : '3rem';
@@ -37,7 +44,10 @@ export default function App() {
         )}
         {tab === 'dashboard' && <DashboardScreen />}
         {tab === 'insights' && <InsightsScreen />}
-        {tab === 'capabilities' && <CapabilitiesScreen />}
+        {tab === 'capabilities' && (
+          <CapabilitiesScreen onNavigateToScience={navigateToScience} />
+        )}
+        {tab === 'science' && <ScienceScreen targetId={scienceTarget} />}
       </div>
 
       {/* Unified bottom bar */}
@@ -66,16 +76,20 @@ export default function App() {
         <div className="flex h-12">
           {(
             [
-              { id: 'log', label: 'Log' },
-              { id: 'dashboard', label: 'Dashboard' },
-              { id: 'insights', label: 'Insights' },
+              { id: 'log',          label: 'Log' },
+              { id: 'dashboard',    label: 'Dashboard' },
+              { id: 'insights',     label: 'Insights' },
               { id: 'capabilities', label: 'Capabilities' },
+              { id: 'science',      label: 'Science' },
             ] as { id: Tab; label: string }[]
           ).map(({ id, label }) => (
             <button
               key={id}
-              onClick={() => setTab(id)}
-              className={`flex-1 text-sm font-medium transition-colors ${
+              onClick={() => {
+                if (id !== 'science') setScienceTarget(undefined);
+                setTab(id);
+              }}
+              className={`flex-1 text-xs font-medium transition-colors ${
                 tab === id ? 'text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
             >
