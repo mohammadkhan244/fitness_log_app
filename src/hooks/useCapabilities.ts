@@ -60,7 +60,7 @@ function hasNegativeKeyword(set: ExerciseSet): string | null {
 
 const EXEMPT_DAY_STATUS = new Set<string>(['Chaos-absorption', 'Rest-on-signal']);
 
-function computeStatus(
+export function computeStatus(
   capability: Capability,
   windowSets: ExerciseSet[],
   windowStartDate: string,

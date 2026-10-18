@@ -14,6 +14,7 @@ export default function App() {
   const syncState = useSync();
   const [tab, setTab] = useState<Tab>('log');
   const [scienceTarget, setScienceTarget] = useState<string | undefined>(undefined);
+  const [capabilitiesTarget, setCapabilitiesTarget] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const logSaveTrigger = useRef<() => void>(() => {});
@@ -21,6 +22,11 @@ export default function App() {
   function navigateToScience(capabilityId: string) {
     setScienceTarget(capabilityId);
     setTab('science');
+  }
+
+  function navigateToCapabilities(capabilityId: string) {
+    setCapabilitiesTarget(capabilityId);
+    setTab('capabilities');
   }
 
   // On the log tab the bottom bar is taller (save row + tab row)
@@ -43,9 +49,17 @@ export default function App() {
           />
         )}
         {tab === 'dashboard' && <DashboardScreen />}
-        {tab === 'insights' && <InsightsScreen />}
+        {tab === 'insights' && (
+          <InsightsScreen
+            onNavigateToCapabilities={navigateToCapabilities}
+            onNavigateToScience={navigateToScience}
+          />
+        )}
         {tab === 'capabilities' && (
-          <CapabilitiesScreen onNavigateToScience={navigateToScience} />
+          <CapabilitiesScreen
+            onNavigateToScience={navigateToScience}
+            targetId={capabilitiesTarget}
+          />
         )}
         {tab === 'science' && <ScienceScreen targetId={scienceTarget} />}
       </div>
@@ -87,6 +101,7 @@ export default function App() {
               key={id}
               onClick={() => {
                 if (id !== 'science') setScienceTarget(undefined);
+                if (id !== 'capabilities') setCapabilitiesTarget(undefined);
                 setTab(id);
               }}
               className={`flex-1 text-xs font-medium transition-colors ${

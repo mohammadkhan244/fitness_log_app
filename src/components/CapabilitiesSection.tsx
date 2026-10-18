@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCapabilities } from '../hooks/useCapabilities';
 import { NEGATIVE_SIGNAL_KEYWORDS } from '../config/capabilityConfig';
 import type { CapabilityResult, CapabilityStatus } from '../hooks/useCapabilities';
@@ -218,22 +218,29 @@ function collapsedDetail(result: CapabilityResult): { text: string; color: strin
 function CapabilityRow({
   result,
   onNavigateToScience,
+  isTarget,
 }: {
   result: CapabilityResult;
   onNavigateToScience?: (id: string) => void;
+  isTarget?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(isTarget));
   const refStandardRef = useRef<HTMLDivElement>(null);
   const { capability, status } = result;
   const style = STATUS_STYLE[status];
   const { text: detail, color: detailColor } = collapsedDetail(result);
   const canExpand = status !== 'untested';
 
+  // Auto-open when this card becomes the navigation target
+  useEffect(() => {
+    if (isTarget && canExpand) setOpen(true);
+  }, [isTarget, canExpand]);
+
   const hasSources = capability.sources && capability.sources.length > 0;
   const hasRefStandard = Boolean(capability.referenceStandard);
 
   return (
-    <div className={`border rounded-xl overflow-hidden ${style.border}`}>
+    <div id={`capability-${capability.id}`} className={`border rounded-xl overflow-hidden ${style.border}`}>
       {/* Collapsed header */}
       <button
         type="button"
@@ -305,10 +312,18 @@ function CapabilityRow({
 
 export default function CapabilitiesSection({
   onNavigateToScience,
+  targetId,
 }: {
   onNavigateToScience?: (id: string) => void;
+  targetId?: string;
 }) {
   const results = useCapabilities();
+
+  useEffect(() => {
+    if (!targetId) return;
+    const el = document.getElementById(`capability-${targetId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [targetId]);
 
   return (
     <div className="space-y-3">
@@ -320,6 +335,7 @@ export default function CapabilitiesSection({
           key={r.capability.id}
           result={r}
           onNavigateToScience={onNavigateToScience}
+          isTarget={r.capability.id === targetId}
         />
       ))}
     </div>

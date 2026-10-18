@@ -6,6 +6,7 @@ import DailyFocusCard from './DailyFocusCard';
 import InsightsTab from './InsightsTab';
 import MobilityFocusCard from './MobilityFocusCard';
 import MobilityInsightsTab from './MobilityInsightsTab';
+import TodaysMechanismCard from './TodaysMechanismCard';
 
 const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
 
@@ -14,7 +15,13 @@ function calendarWeek(): number {
   return Math.max(1, Math.floor(days / 7) + 1);
 }
 
-export default function InsightsScreen() {
+export default function InsightsScreen({
+  onNavigateToCapabilities,
+  onNavigateToScience,
+}: {
+  onNavigateToCapabilities?: (id: string) => void;
+  onNavigateToScience?: (id: string) => void;
+}) {
   const { strength, mobility } = useBodyMap();
   const dashboard = useDashboardData();
   const currentWeek = calendarWeek();
@@ -30,9 +37,13 @@ export default function InsightsScreen() {
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-6">
-      {/* Dual focus cards — always visible regardless of body map toggle */}
+      {/* Focus cards — always visible regardless of body map toggle */}
       <DailyFocusCard bodyMap={strength} week={currentWeek} />
       <MobilityFocusCard mobility={mobility} />
+      <TodaysMechanismCard
+        onNavigateToCapabilities={onNavigateToCapabilities}
+        onNavigateToScience={onNavigateToScience}
+      />
 
       {/* Body map — mode is lifted here so the insights section below stays in sync */}
       <div>
