@@ -28,7 +28,7 @@ export default function App() {
   const [saveMsg, setSaveMsg] = useState('');
   const logSaveTrigger = useRef<() => void>(() => {});
 
-  const { hasBadge, acknowledge } = useCapabilityBadge();
+  const { hasBadge, badgeLabel, acknowledge } = useCapabilityBadge();
 
   // Sync badge count to PWA app icon via Web App Badging API
   useEffect(() => {
@@ -126,16 +126,21 @@ export default function App() {
                 if (id !== 'capabilities') setCapabilitiesTarget(undefined);
                 setTab(id);
               }}
-              className={`flex-1 text-xs font-medium transition-colors ${
+              className={`flex-1 text-xs font-medium transition-colors flex flex-col items-center justify-center gap-0 ${
                 tab === id ? 'text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
             >
-              <span className="relative inline-block">
+              <span className="relative inline-block leading-none">
                 {label}
                 {id === 'capabilities' && hasBadge && (
                   <span className="absolute -top-1.5 -right-2.5 w-2 h-2 bg-red-500 rounded-full" />
                 )}
               </span>
+              {id === 'capabilities' && badgeLabel && (
+                <span className="text-[9px] text-red-400/80 font-normal mt-0.5 max-w-[72px] truncate leading-none">
+                  {badgeLabel}
+                </span>
+              )}
             </button>
           ))}
         </div>

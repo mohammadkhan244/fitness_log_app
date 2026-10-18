@@ -10,7 +10,11 @@ const STORAGE_KEY = 'capabilities_last_acknowledged';
  *   - A capability's status changed, and the change date is after the last visit.
  * Call acknowledge() when the user opens the Capabilities tab to clear the badge.
  */
-export function useCapabilityBadge(): { hasBadge: boolean; acknowledge: () => void } {
+export function useCapabilityBadge(): {
+  hasBadge: boolean;
+  badgeLabel: string | undefined;
+  acknowledge: () => void;
+} {
   const [lastAck, setLastAck] = useState<string>(
     () => localStorage.getItem(STORAGE_KEY) ?? '1970-01-01T00:00:00.000Z',
   );
@@ -22,13 +26,17 @@ export function useCapabilityBadge(): { hasBadge: boolean; acknowledge: () => vo
   let hasBadge = false;
   if (mechanism) {
     if (mechanism.triggerCase === 'today') {
-      // Badge if user hasn't visited Capabilities at any point today
       hasBadge = lastAckDate < today;
     } else if (mechanism.triggerCase === 'status-change' && mechanism.changeDate) {
-      // Badge if the status flip happened after the last acknowledged date
       hasBadge = mechanism.changeDate > lastAckDate;
     }
   }
+
+  // Short name for the sub-label: strip the parenthetical qualifier, e.g.
+  // 'Pulling tendon capacity (fast-tempo transfer)' → 'Pulling tendon capacity'
+  const badgeLabel = hasBadge && mechanism
+    ? mechanism.capability.name.split('(')[0].trim()
+    : undefined;
 
   function acknowledge() {
     const now = new Date().toISOString();
@@ -36,5 +44,5 @@ export function useCapabilityBadge(): { hasBadge: boolean; acknowledge: () => vo
     setLastAck(now);
   }
 
-  return { hasBadge, acknowledge };
+  return { hasBadge, badgeLabel, acknowledge };
 }
