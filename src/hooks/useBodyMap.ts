@@ -251,7 +251,8 @@ const MUSCLE_VIEW: Record<Muscle, 'front' | 'back' | 'both'> = {
 
 export { MUSCLE_VIEW };
 
-export function mapExerciseToMuscles(exerciseName: string): Muscle[] {
+export function mapExerciseToMuscles(exerciseName: string | null | undefined): Muscle[] {
+  if (!exerciseName) return [];
   const lower = exerciseName.toLowerCase();
   const matched = new Set<Muscle>();
   for (const { kw, muscles } of KEYWORD_MUSCLE) {
@@ -263,7 +264,8 @@ export function mapExerciseToMuscles(exerciseName: string): Muscle[] {
 }
 
 // For timed no-load sets: check mobility keywords first, fall back to strength keywords.
-function mapExerciseToMobilityMuscles(exerciseName: string): Muscle[] {
+function mapExerciseToMobilityMuscles(exerciseName: string | null | undefined): Muscle[] {
+  if (!exerciseName) return [];
   const lower = exerciseName.toLowerCase();
   const matched = new Set<Muscle>();
   for (const { kw, muscles } of MOBILITY_KEYWORD_MUSCLE) {
@@ -305,8 +307,15 @@ export function useBodyMap(): BodyMapViews {
       db.exerciseAliases.toArray(),
     ]);
 
-    const aliasMap = new Map(aliasRows.map((a) => [a.alias.toLowerCase(), a.canonical]));
-    const resolve = (name: string) => aliasMap.get(name.toLowerCase()) ?? name;
+    const aliasMap = new Map(
+      aliasRows
+        .filter((a) => a.alias && a.canonical)
+        .map((a) => [a.alias.toLowerCase(), a.canonical]),
+    );
+    const resolve = (name: string | null | undefined) => {
+      if (!name) return '';
+      return aliasMap.get(name.toLowerCase()) ?? name;
+    };
 
     const sMuscleSets = new Map<Muscle, number>();
     const sMuscleExercises = new Map<Muscle, Set<string>>();
@@ -317,6 +326,7 @@ export function useBodyMap(): BodyMapViews {
     const mUnmapped = new Set<string>();
 
     for (const s of sets) {
+      if (!s.exercise) continue;
       const resolved = resolve(s.exercise);
 
       if (isMobilitySet(s)) {

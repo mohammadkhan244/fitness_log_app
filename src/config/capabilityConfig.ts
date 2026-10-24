@@ -4,6 +4,16 @@ export type NameMatcher = { nameContains: string };
 export type CategoryMatcher = { nameContains?: string; category: Category };
 export type ExerciseMatcher = NameMatcher | CategoryMatcher;
 
+/**
+ * Runtime safety net: ExerciseSet.exercise is typed string but legacy Notion rows
+ * can arrive as null when the Exercise title property was blank or missing.
+ * Use this everywhere an exercise name is lowercased, compared, or used as a key —
+ * never raw `s.exercise.toLowerCase()`. Returns '' for null / undefined.
+ */
+export function safeExercise(name: string | null | undefined): string {
+  return name ?? '';
+}
+
 export type SourceTier = 'peer-reviewed' | 'practitioner' | 'learnings';
 
 export interface CapabilitySource {

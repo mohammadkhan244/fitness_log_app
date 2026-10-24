@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
-import { CAPABILITIES, ROLLING_WINDOW_WEEKS, type Capability } from '../config/capabilityConfig';
+import { CAPABILITIES, ROLLING_WINDOW_WEEKS, safeExercise, type Capability } from '../config/capabilityConfig';
 import { computeStatus, type CapabilityStatus, type CapabilityResult } from './useCapabilities';
 import type { ExerciseSet } from '../types';
 
@@ -43,9 +43,18 @@ export function useTodaysMechanism(): TodaysMechanismResult | null | undefined {
 
     if (sets.length === 0) return null;
 
-    const aliasMap = new Map(aliasRows.map((a) => [a.alias.toLowerCase(), a.canonical]));
-    const resolve = (name: string) => aliasMap.get(name.toLowerCase()) ?? name;
-    const resolved = sets.map((s) => ({ ...s, exercise: resolve(s.exercise) }));
+    const aliasMap = new Map(
+      aliasRows
+        .filter((a) => a.alias && a.canonical)
+        .map((a) => [safeExercise(a.alias).toLowerCase(), a.canonical]),
+    );
+    const resolve = (name: string | null | undefined) => {
+      const safe = safeExercise(name);
+      return aliasMap.get(safe.toLowerCase()) ?? safe;
+    };
+    const resolved = sets
+      .filter((s) => s.exercise)
+      .map((s) => ({ ...s, exercise: resolve(s.exercise) }));
 
     // Evidence snapshots for the two-run comparison
     const pastSets = resolved.filter((s) => s.date <= sevenDaysAgoDate);

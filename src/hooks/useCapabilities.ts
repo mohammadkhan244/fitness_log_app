@@ -6,6 +6,7 @@ import {
   NEGATIVE_SIGNAL_KEYWORDS,
   ROLLING_WINDOW_WEEKS,
   FAST_TEMPO_PULLING_KEYWORDS,
+  safeExercise,
   type Capability,
   type ExerciseMatcher,
   type CategoryMatcher,
@@ -34,19 +35,20 @@ function isCategoryMatcher(m: ExerciseMatcher): m is CategoryMatcher {
 }
 
 function matchesMatcher(set: ExerciseSet, matcher: ExerciseMatcher): boolean {
+  const exerciseLower = safeExercise(set.exercise).toLowerCase();
   if (isCategoryMatcher(matcher)) {
     if (set.category !== matcher.category) return false;
     if (matcher.nameContains) {
-      return set.exercise.toLowerCase().includes(matcher.nameContains.toLowerCase());
+      return exerciseLower.includes(matcher.nameContains.toLowerCase());
     }
     return true;
   }
-  return set.exercise.toLowerCase().includes(matcher.nameContains.toLowerCase());
+  return exerciseLower.includes(matcher.nameContains.toLowerCase());
 }
 
 function isPullingFastTempo(set: ExerciseSet): boolean {
   if (set.category !== 'Fast Tempo') return false;
-  const name = set.exercise.toLowerCase();
+  const name = safeExercise(set.exercise).toLowerCase();
   return (
     FAST_TEMPO_PULLING_KEYWORDS.some((kw) => name.includes(kw)) ||
     (name.includes('pull') && !name.includes('pulldown'))
@@ -170,10 +172,19 @@ export function useCapabilities(): CapabilityResult[] {
       db.exerciseAliases.toArray(),
     ]);
 
-    const aliasMap = new Map(aliasRows.map((a) => [a.alias.toLowerCase(), a.canonical]));
-    const resolve = (name: string) => aliasMap.get(name.toLowerCase()) ?? name;
+    const aliasMap = new Map(
+      aliasRows
+        .filter((a) => a.alias && a.canonical)
+        .map((a) => [safeExercise(a.alias).toLowerCase(), a.canonical]),
+    );
+    const resolve = (name: string | null | undefined) => {
+      const safe = safeExercise(name);
+      return aliasMap.get(safe.toLowerCase()) ?? safe;
+    };
 
-    const resolved = sets.map((s) => ({ ...s, exercise: resolve(s.exercise) }));
+    const resolved = sets
+      .filter((s) => s.exercise)
+      .map((s) => ({ ...s, exercise: resolve(s.exercise) }));
 
     return CAPABILITIES.map((cap) => computeStatus(cap, resolved, windowStartDate));
   }, []);

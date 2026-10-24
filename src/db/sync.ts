@@ -159,26 +159,39 @@ interface NotionPage {
   properties: Record<string, unknown>;
 }
 
-function str(prop: unknown): string | undefined {
-  const p = prop as { rich_text?: Array<{ plain_text: string }> } | null;
-  return p?.rich_text?.[0]?.plain_text?.trim() || undefined;
-}
-function sel(prop: unknown): string | undefined {
+/**
+ * Safe accessors for Notion API property objects.
+ * All accept `unknown` so the caller never has to cast first.
+ * Export these for any new code that reads Notion API responses —
+ * use these instead of direct property access to prevent null crashes.
+ */
+export function safeSelectName(prop: unknown): string | undefined {
   const p = prop as { select?: { name: string } | null } | null;
   return p?.select?.name || undefined;
 }
-function num(prop: unknown): number | undefined {
-  const p = prop as { number?: number | null } | null;
-  return p?.number ?? undefined;
+export function safeRichText(prop: unknown): string | undefined {
+  const p = prop as { rich_text?: Array<{ plain_text: string }> } | null;
+  return p?.rich_text?.[0]?.plain_text?.trim() || undefined;
 }
-function title(prop: unknown): string {
+export function safeNotionTitle(prop: unknown): string {
   const p = prop as { title?: Array<{ plain_text: string }> } | null;
   return p?.title?.[0]?.plain_text?.trim() ?? '';
 }
-function date(prop: unknown): string | undefined {
+export function safeNotionDate(prop: unknown): string | undefined {
   const p = prop as { date?: { start: string } | null } | null;
   return p?.date?.start || undefined;
 }
+export function safeNotionNumber(prop: unknown): number | undefined {
+  const p = prop as { number?: number | null } | null;
+  return p?.number ?? undefined;
+}
+
+// Internal aliases used within this file
+function str(prop: unknown): string | undefined { return safeRichText(prop); }
+function sel(prop: unknown): string | undefined { return safeSelectName(prop); }
+function num(prop: unknown): number | undefined { return safeNotionNumber(prop); }
+function title(prop: unknown): string { return safeNotionTitle(prop); }
+function date(prop: unknown): string | undefined { return safeNotionDate(prop); }
 
 function fromNotionPage(page: NotionPage): Omit<ExerciseSet, 'id'> | null {
   const pr = page.properties;

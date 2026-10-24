@@ -61,8 +61,13 @@ export default function ProgressTab() {
   const allSets = useLiveQuery(() => db.sets.toArray(), []) ?? [];
 
   const exercises: ExerciseProgress[] = useMemo(() => {
-    const aliasMap = new Map(aliases.map((a) => [a.alias.toLowerCase(), a.canonical]));
-    const resolve = (name: string) => aliasMap.get(name.toLowerCase()) ?? name;
+    const aliasMap = new Map(
+      aliases.filter((a) => a.alias && a.canonical).map((a) => [a.alias.toLowerCase(), a.canonical]),
+    );
+    const resolve = (name: string | null | undefined) => {
+      if (!name) return '';
+      return aliasMap.get(name.toLowerCase()) ?? name;
+    };
 
     const map = new Map<string, {
       originalNames: Set<string>;
@@ -71,6 +76,7 @@ export default function ProgressTab() {
     }>();
 
     for (const s of allSets) {
+      if (!s.exercise) continue;
       const canonical = resolve(s.exercise);
       if (!map.has(canonical)) map.set(canonical, { originalNames: new Set(), totalSets: 0, weekData: new Map() });
       const entry = map.get(canonical)!;
