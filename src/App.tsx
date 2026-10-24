@@ -28,7 +28,7 @@ export default function App() {
   const [saveMsg, setSaveMsg] = useState('');
   const logSaveTrigger = useRef<() => void>(() => {});
 
-  const { hasBadge, badgeLabel, acknowledge } = useCapabilityBadge();
+  const { hasBadge, badgeLabel, badgeCapabilityId, acknowledge } = useCapabilityBadge();
 
   // Sync badge count to PWA app icon via Web App Badging API
   useEffect(() => {
@@ -74,12 +74,14 @@ export default function App() {
           <InsightsScreen
             onNavigateToCapabilities={navigateToCapabilities}
             onNavigateToScience={navigateToScience}
+            hasBadge={hasBadge}
           />
         )}
         {tab === 'capabilities' && (
           <CapabilitiesScreen
             onNavigateToScience={navigateToScience}
             targetId={capabilitiesTarget}
+            badgeCapabilityId={badgeCapabilityId}
           />
         )}
         {tab === 'science' && <ScienceScreen targetId={scienceTarget} />}

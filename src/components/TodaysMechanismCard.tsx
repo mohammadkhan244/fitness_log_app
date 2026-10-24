@@ -49,9 +49,11 @@ const STATUS_BADGE: Record<CapabilityStatus, string> = {
 export default function TodaysMechanismCard({
   onNavigateToCapabilities,
   onNavigateToScience,
+  isNotification,
 }: {
   onNavigateToCapabilities?: (id: string) => void;
   onNavigateToScience?: (id: string) => void;
+  isNotification?: boolean;
 }) {
   const result = useTodaysMechanism();
 
@@ -100,8 +102,13 @@ export default function TodaysMechanismCard({
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Today's mechanism</p>
+    <div className={`bg-gray-900 border rounded-xl p-4 space-y-3 ${isNotification ? 'border-red-900/40 ring-1 ring-red-500/30' : 'border-gray-800'}`}>
+      <div className="flex items-center gap-2">
+        {isNotification && (
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+        )}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Today's mechanism</p>
+      </div>
 
       {/* Capability name + status badge */}
       <div className="flex items-center gap-2 flex-wrap">

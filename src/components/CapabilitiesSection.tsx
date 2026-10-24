@@ -219,10 +219,12 @@ function CapabilityRow({
   result,
   onNavigateToScience,
   isTarget,
+  isNotification,
 }: {
   result: CapabilityResult;
   onNavigateToScience?: (id: string) => void;
   isTarget?: boolean;
+  isNotification?: boolean;
 }) {
   const [open, setOpen] = useState(Boolean(isTarget));
   const refStandardRef = useRef<HTMLDivElement>(null);
@@ -240,7 +242,10 @@ function CapabilityRow({
   const hasRefStandard = Boolean(capability.referenceStandard);
 
   return (
-    <div id={`capability-${capability.id}`} className={`border rounded-xl overflow-hidden ${style.border}`}>
+    <div
+      id={`capability-${capability.id}`}
+      className={`border rounded-xl overflow-hidden ${isNotification ? 'border-red-900/40 ring-1 ring-red-500/30' : style.border}`}
+    >
       {/* Collapsed header */}
       <button
         type="button"
@@ -249,6 +254,9 @@ function CapabilityRow({
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
+            {isNotification && (
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+            )}
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${style.badge}`}>
               {style.label}
             </span>
@@ -313,9 +321,11 @@ function CapabilityRow({
 export default function CapabilitiesSection({
   onNavigateToScience,
   targetId,
+  badgeCapabilityId,
 }: {
   onNavigateToScience?: (id: string) => void;
   targetId?: string;
+  badgeCapabilityId?: string;
 }) {
   const results = useCapabilities();
 
@@ -336,6 +346,7 @@ export default function CapabilitiesSection({
           result={r}
           onNavigateToScience={onNavigateToScience}
           isTarget={r.capability.id === targetId}
+          isNotification={r.capability.id === badgeCapabilityId}
         />
       ))}
     </div>

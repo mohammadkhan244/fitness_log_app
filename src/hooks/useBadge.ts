@@ -13,6 +13,7 @@ const STORAGE_KEY = 'capabilities_last_acknowledged';
 export function useCapabilityBadge(): {
   hasBadge: boolean;
   badgeLabel: string | undefined;
+  badgeCapabilityId: string | undefined;
   acknowledge: () => void;
 } {
   const [lastAck, setLastAck] = useState<string>(
@@ -38,11 +39,15 @@ export function useCapabilityBadge(): {
     ? mechanism.capability.name.split('(')[0].trim()
     : undefined;
 
+  const badgeCapabilityId = hasBadge && mechanism
+    ? mechanism.capability.id
+    : undefined;
+
   function acknowledge() {
     const now = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, now);
     setLastAck(now);
   }
 
-  return { hasBadge, badgeLabel, acknowledge };
+  return { hasBadge, badgeLabel, badgeCapabilityId, acknowledge };
 }

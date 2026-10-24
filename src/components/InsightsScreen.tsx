@@ -18,9 +18,11 @@ function calendarWeek(): number {
 export default function InsightsScreen({
   onNavigateToCapabilities,
   onNavigateToScience,
+  hasBadge,
 }: {
   onNavigateToCapabilities?: (id: string) => void;
   onNavigateToScience?: (id: string) => void;
+  hasBadge?: boolean;
 }) {
   const { strength, mobility } = useBodyMap();
   const dashboard = useDashboardData();
@@ -43,6 +45,7 @@ export default function InsightsScreen({
       <TodaysMechanismCard
         onNavigateToCapabilities={onNavigateToCapabilities}
         onNavigateToScience={onNavigateToScience}
+        isNotification={hasBadge}
       />
 
       {/* Body map — mode is lifted here so the insights section below stays in sync */}
