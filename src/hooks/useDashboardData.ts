@@ -53,7 +53,7 @@ function computeDashboard(sets: ExerciseSet[]) {
   const getWeek = (s: ExerciseSet): number => {
     if (s.week != null) return s.week;
     const d = new Date(s.date + 'T12:00:00').getTime();
-    const days = Math.round((d - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
+    const days = Math.floor((d - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
     return Math.max(1, Math.floor(days / 7) + 1);
   };
 

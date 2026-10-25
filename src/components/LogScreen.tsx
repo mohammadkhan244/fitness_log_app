@@ -13,7 +13,7 @@ function today(): string {
 
 function weekFromDate(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
-  const days = Math.round((d.getTime() - PROGRAM_START.getTime()) / (1000 * 60 * 60 * 24));
+  const days = Math.floor((d.getTime() - PROGRAM_START.getTime()) / (1000 * 60 * 60 * 24));
   if (days < 0) return '';
   return String(Math.floor(days / 7) + 1);
 }

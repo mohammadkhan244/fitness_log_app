@@ -6,7 +6,9 @@ import { db } from './schema';
 const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
 
 export function currentWeek(): number {
-  const days = Math.round((Date.now() - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
+  const noon = new Date();
+  noon.setHours(12, 0, 0, 0);
+  const days = Math.floor((noon.getTime() - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
   return Math.max(1, Math.floor(days / 7) + 1);
 }
 

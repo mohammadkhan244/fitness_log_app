@@ -7,7 +7,7 @@ const PROGRAM_START_MS = new Date('2025-06-23T00:00:00').getTime();
 
 function weekFromDate(date: string): number {
   const d = new Date(date + 'T12:00:00').getTime();
-  const days = Math.round((d - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
+  const days = Math.floor((d - PROGRAM_START_MS) / (1000 * 60 * 60 * 24));
   return Math.max(1, Math.floor(days / 7) + 1);
 }
 

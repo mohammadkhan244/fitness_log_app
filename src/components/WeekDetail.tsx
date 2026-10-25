@@ -60,7 +60,7 @@ export default function WeekDetail({ week, onClose }: Props) {
       (s) =>
         s.week === week ||
         (s.date >= start && s.date < end) ||
-        (Math.max(1, Math.floor(Math.round((new Date(s.date + 'T12:00:00').getTime() - PROGRAM_START_MS) / 86400000) / 7) + 1)) === week,
+        (Math.max(1, Math.floor(Math.floor((new Date(s.date + 'T12:00:00').getTime() - PROGRAM_START_MS) / 86400000) / 7) + 1)) === week,
     );
     return matched.sort((a, b) => a.date.localeCompare(b.date));
   }, [week]);
