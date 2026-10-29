@@ -67,13 +67,27 @@ export const CAPABILITIES: Capability[] = [
       // 'Handstand freestanding', 'Handstand continuous hold', 'Handstand practice',
       // 'Handstand tucks', 'Handstand pushup negatives'
     ],
-    builtBy: [],
+    builtBy: [
+      { nameContains: 'Wrist extension PAILs' },
+      { nameContains: 'Wrist PAILs' },
+    ],
     referenceStandard:
       'Coaching and PT sources commonly cite roughly 90° of wrist extension as the threshold for safe handstand loading — most daily tasks only use the wrist to about 40°, so this range is usually built deliberately, not assumed. General reference information, not a personal measurement — the app tracks training evidence, not your actual degrees of motion.',
     science:
       'Handstand loading asks the wrist for roughly 90° of extension, more than double the ~40° most daily tasks use. Loading deliberately in that end-range — not just stretching into it — is what trains the wrist flexors, extensors, and anterior capsule to tolerate sustained compression under bodyweight.',
+    sources: [
+      {
+        tier: 'practitioner',
+        title: 'Understanding FRC and PAILs/RAILs — end-range isometric loading',
+        url: 'https://anaritaalmeida.substack.com/p/understanding-frc-and-how-it-is-a',
+        caveat:
+          'Practitioner/FRC framework source, not peer-reviewed. PAILs/RAILs is widely used in mobility coaching but controlled studies on this specific protocol are limited — treat as coaching consensus, not controlled evidence.',
+        writeup:
+          "PAILs (Progressive Angular Isometric Loading) is an overcoming isometric pushed into the end of the current range at near-max effort for roughly 10 seconds — training the nervous system to tolerate and recruit muscle at a length it previously avoided. RAILs (Regressive Angular Isometric Loading) follows immediately: an active contraction pulling yourself deeper into the stretch under your own strength rather than passive load. Together, they convert passive flexibility into active, usable range — the mechanism the FRC framework calls 'neurological end-range training.' For wrist extension, this directly targets the 70–90° range that handstand loading requires, building the active strength there that handstand practice then demonstrates. Logged as Overcoming Isometric category with Joint Angle set to the trained end-range angle in degrees.",
+      },
+    ],
     basis:
-      'LEARNINGS.md — no specific entry. Structural logic: handstand is the highest-demand wrist extension test in the log; any clean logged set proves this range is available under load.',
+      'LEARNINGS.md — PAILs/RAILs entry: end-range overcoming isometric (PAILs) followed by active pull-deeper contraction (RAILs), training the nervous system to use newly accessed range actively. This is the first builtBy input for wrist-extension; previously demonstratedBy (handstand) existed with nothing feeding it. Log as "Wrist extension PAILs/RAILs" under Overcoming Isometric.',
   },
   {
     id: 'ankle-dorsiflexion',
@@ -88,11 +102,25 @@ export const CAPABILITIES: Capability[] = [
       // Goblet squat, Bulgarian split squat, Zercher squat.
       // Add only if full-depth is confirmed.
     ],
-    builtBy: [],
+    builtBy: [
+      { nameContains: 'Ankle dorsiflexion PAILs' },
+      { nameContains: 'Ankle PAILs' },
+    ],
     referenceStandard:
       'Research on functional range-of-motion puts deep-squat ankle dorsiflexion needs at roughly 30–35°, with the pistol squat demanding more than a two-legged squat. The standard field test: kneel with your big toe 5 inches from a wall, drive your knee forward to touch it without your heel lifting — reaching it indicates adequate range. General reference information, not a personal measurement.',
+    sources: [
+      {
+        tier: 'practitioner',
+        title: 'Understanding FRC and PAILs/RAILs — end-range isometric loading',
+        url: 'https://anaritaalmeida.substack.com/p/understanding-frc-and-how-it-is-a',
+        caveat:
+          'Practitioner/FRC framework source, not peer-reviewed. PAILs/RAILs is widely used in mobility coaching but controlled studies on this specific protocol are limited — treat as coaching consensus, not controlled evidence.',
+        writeup:
+          "PAILs/RAILs applied to ankle dorsiflexion targets the end range that a pistol squat or Cossack squat demands — roughly 30–35° of dorsiflexion under single-leg load. PAILs pushes isometrically into that end range at near-max effort for ~10 seconds, signalling the nervous system that this angle is safe to recruit muscle at; RAILs immediately follows as an active pull deeper into the range. The result is active strength at the end of your dorsiflexion range rather than passive flexibility there — the difference between a range the ankle can be pushed into and one it can actively use under bodyweight load. Logged as Overcoming Isometric category with Joint Angle set to the trained end-range angle in degrees.",
+      },
+    ],
     basis:
-      'LEARNINGS.md — no specific entry. Structural logic: single-leg and Cossack-depth squat patterns require full dorsiflexion range; any clean logged set proves the range is available under load.',
+      'LEARNINGS.md — PAILs/RAILs entry: end-range overcoming isometric (PAILs) followed by active pull-deeper contraction (RAILs), training the nervous system to use newly accessed range actively. This is the first builtBy input for ankle-dorsiflexion; previously demonstratedBy (pistol squat, Cossack squat) existed with nothing feeding it. Log as "Ankle dorsiflexion PAILs/RAILs" under Overcoming Isometric.',
   },
   {
     id: 'pulling-tendon-capacity',

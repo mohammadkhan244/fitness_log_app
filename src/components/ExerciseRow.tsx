@@ -41,6 +41,11 @@ const fieldCls =
   'bg-gray-800 border border-gray-700 rounded-lg px-3 h-11 text-base text-gray-100 focus:outline-none focus:border-blue-500';
 
 export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, autoFocus }: Props) {
+  const notesPlaceholder =
+    row.category === 'Overcoming Isometric' && /^(Wrist|Ankle)/i.test(row.exercise)
+      ? 'PAILs or RAILs; phase distinction if separate sets'
+      : 'Notes (optional)';
+
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 space-y-2">
       {/* Row 1: exercise + category */}
@@ -153,7 +158,7 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
           type="text"
           value={row.notes}
           onChange={(e) => onChange({ notes: e.target.value })}
-          placeholder="Notes (optional)"
+          placeholder={notesPlaceholder}
           className={`flex-1 min-w-0 ${fieldCls} placeholder-gray-600`}
         />
         <button
