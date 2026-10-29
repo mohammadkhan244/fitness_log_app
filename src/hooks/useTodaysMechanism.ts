@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
 import { CAPABILITIES, ROLLING_WINDOW_WEEKS, safeExercise, type Capability } from '../config/capabilityConfig';
 import { computeStatus, type CapabilityStatus, type CapabilityResult } from './useCapabilities';
+import { todayEST, daysAgoEST } from '../utils/dates';
 import type { ExerciseSet } from '../types';
 
 export type MechanismCase = 'today' | 'status-change' | 'fallback';
@@ -28,13 +29,9 @@ const STATUS_SEVERITY: Record<CapabilityStatus, number> = {
 
 export function useTodaysMechanism(): TodaysMechanismResult | null | undefined {
   return useLiveQuery(async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    const windowStartDate = new Date(
-      Date.now() - ROLLING_WINDOW_WEEKS * 7 * 24 * 60 * 60 * 1000,
-    ).toISOString().slice(0, 10);
-    const sevenDaysAgoDate = new Date(
-      Date.now() - 7 * 24 * 60 * 60 * 1000,
-    ).toISOString().slice(0, 10);
+    const today = todayEST();
+    const windowStartDate = daysAgoEST(ROLLING_WINDOW_WEEKS * 7);
+    const sevenDaysAgoDate = daysAgoEST(7);
 
     const [sets, aliasRows] = await Promise.all([
       db.sets.where('date').aboveOrEqual(windowStartDate).toArray(),

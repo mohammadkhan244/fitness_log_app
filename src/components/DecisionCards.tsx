@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { Decision } from '../hooks/useDecisions';
 import { useDecisions } from '../hooks/useDecisions';
+import { todayEST } from '../utils/dates';
 
-const TODAY = new Date().toISOString().split('T')[0];
+const TODAY = todayEST();
 
 function isDue(d: Decision): boolean {
   if (d.status === 'Revisit due') return true;

@@ -4,11 +4,12 @@ import { useExercises } from '../hooks/useExercises';
 import type { Category, Equipment, ExerciseSet, Unit } from '../types';
 import ExerciseRow, { type RowState } from './ExerciseRow';
 import SessionHeader, { type SessionValues } from './SessionHeader';
+import { todayEST } from '../utils/dates';
 
 const PROGRAM_START = new Date('2025-06-23T00:00:00');
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayEST();
 }
 
 function weekFromDate(dateStr: string): string {

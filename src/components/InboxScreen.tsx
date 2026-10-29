@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/schema';
 import { buildBackupJson, buildWeekMarkdown, currentWeek, exportWeekToNotion } from '../db/inbox';
 import type { InboxType } from '../types';
+import { todayEST } from '../utils/dates';
 
 const TYPES: InboxType[] = ['Thought', 'Link', 'Quote'];
 const EMOJI: Record<InboxType, string> = { Thought: '💭', Link: '🔗', Quote: '💬' };
@@ -35,7 +36,7 @@ export default function InboxScreen() {
         type,
         content: text,
         url: type === 'Link' ? text : undefined,
-        date: new Date().toISOString().slice(0, 10),
+        date: todayEST(),
         week,
         createdAt: Date.now(),
       });

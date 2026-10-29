@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTodaysMechanism } from './useTodaysMechanism';
+import { todayEST } from '../utils/dates';
 
 const STORAGE_KEY = 'capabilities_last_acknowledged';
 
@@ -21,7 +22,7 @@ export function useCapabilityBadge(): {
   );
   const mechanism = useTodaysMechanism();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayEST();
   const lastAckDate = lastAck.slice(0, 10);
 
   let hasBadge = false;

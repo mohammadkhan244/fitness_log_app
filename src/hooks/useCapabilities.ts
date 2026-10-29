@@ -11,6 +11,7 @@ import {
   type ExerciseMatcher,
   type CategoryMatcher,
 } from '../config/capabilityConfig';
+import { daysAgoEST } from '../utils/dates';
 
 export type CapabilityStatus =
   | 'demonstrated'
@@ -163,9 +164,7 @@ export function computeStatus(
 
 export function useCapabilities(): CapabilityResult[] {
   const result = useLiveQuery(async () => {
-    const windowStartDate = new Date(Date.now() - ROLLING_WINDOW_WEEKS * 7 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
+    const windowStartDate = daysAgoEST(ROLLING_WINDOW_WEEKS * 7);
 
     const [sets, aliasRows] = await Promise.all([
       db.sets.where('date').aboveOrEqual(windowStartDate).toArray(),
