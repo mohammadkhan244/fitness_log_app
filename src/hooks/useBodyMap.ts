@@ -282,6 +282,7 @@ function mapExerciseToMobilityMuscles(exerciseName: string | null | undefined): 
 
 function isMobilitySet(s: { unit?: string; load?: number; category?: string }): boolean {
   if (s.category === 'Cardio') return false;
+  if (s.category === 'Overcoming Isometric') return false; // strength stimulus, not endurance/mobility
   return (s.unit === 'seconds' || s.unit === 'minutes') && s.load == null;
 }
 

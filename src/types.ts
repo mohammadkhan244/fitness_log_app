@@ -22,7 +22,8 @@ export type Category =
   | 'Benchmark'
   | 'Rest/Chaos'
   | 'General'
-  | 'Cardio';
+  | 'Cardio'
+  | 'Overcoming Isometric';
 export type Unit =
   | 'seconds'
   | 'minutes'
@@ -52,6 +53,7 @@ export interface ExerciseSet {
   cause?: Cause;
   fatigue?: number;       // 1–5
   load?: number;          // weight in lbs (separate from rep value)
+  jointAngle?: number;    // degrees — only for Overcoming Isometric
 
   exercise: string;
   category: Category;

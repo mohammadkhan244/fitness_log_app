@@ -35,6 +35,7 @@ function toNotionPage(e: ExerciseSet): object {
       ...(e.dayStatus && { 'Day Status': { select: { name: e.dayStatus } } }),
       ...(e.cause && { Cause: { select: { name: e.cause } } }),
       ...(e.fatigue != null && { Fatigue: { number: e.fatigue } }),
+      ...(e.jointAngle != null && { 'Joint Angle': { number: e.jointAngle } }),
       ...(e.set != null && { Set: { number: e.set } }),
       ...(noteStr && { Notes: { rich_text: [{ text: { content: noteStr } }] } }),
       'Client ID': { rich_text: [{ text: { content: e.clientId } }] },
@@ -119,6 +120,7 @@ export interface EntryUpdate {
   value?: number;
   unit?: Unit;
   load?: number;
+  jointAngle?: number;
   notes?: string;
   date: string;
 }
@@ -142,6 +144,7 @@ export async function updateEntry(
           ...(patch.equipment && { Equipment: { select: { name: patch.equipment } } }),
           ...(patch.value != null && { Value: { number: patch.value } }),
           ...(patch.unit && patch.unit !== 'none' && { Unit: { select: { name: patch.unit } } }),
+          ...(patch.jointAngle != null && { 'Joint Angle': { number: patch.jointAngle } }),
           Date: { date: { start: patch.date } },
           Week: { number: newWeek },
           Year: { select: { name: String(new Date(patch.date + 'T12:00:00').getFullYear()) } },
@@ -211,6 +214,7 @@ function fromNotionPage(page: NotionPage): Omit<ExerciseSet, 'id'> | null {
     dayStatus: sel(pr['Day Status']) as DayStatus | undefined,
     cause: sel(pr['Cause']) as Cause | undefined,
     fatigue: num(pr['Fatigue']),
+    jointAngle: num(pr['Joint Angle']),
     exercise,
     category: (sel(pr['Category']) as Category) || 'General',
     set: num(pr['Set']),

@@ -40,8 +40,9 @@ const CATEGORY_BADGE: Partial<Record<string, string>> = {
   'Skills':     'bg-cyan-900/60 text-cyan-300',
   'Guardian':   'bg-green-900/60 text-green-300',
   'Benchmark':  'bg-amber-900/60 text-amber-300',
-  'Cardio':     'bg-pink-900/60 text-pink-300',
-  'General':    'bg-gray-800 text-gray-400',
+  'Cardio':               'bg-pink-900/60 text-pink-300',
+  'Overcoming Isometric': 'bg-orange-900/60 text-orange-300',
+  'General':              'bg-gray-800 text-gray-400',
   'Rest/Chaos': 'bg-gray-800 text-gray-500',
 };
 

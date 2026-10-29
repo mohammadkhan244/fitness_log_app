@@ -26,7 +26,7 @@ const UNIT_SHORT: Record<string, string> = {
 };
 
 const CATEGORIES: Category[] = [
-  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General', 'Cardio',
+  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General', 'Cardio', 'Overcoming Isometric',
 ];
 const EQUIPMENTS: Equipment[] = [
   'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',
@@ -41,6 +41,7 @@ interface EditState {
   value: string;
   unit: string;
   load: string;
+  jointAngle: string;
   notes: string;
   date: string;
 }
@@ -82,6 +83,7 @@ export default function WeekDetail({ week, onClose }: Props) {
       value: e.value != null ? String(e.value) : '',
       unit: e.unit ?? 'reps',
       load: e.load != null ? String(e.load) : '',
+      jointAngle: e.jointAngle != null ? String(e.jointAngle) : '',
       notes: e.notes ?? '',
       date: e.date,
     });
@@ -103,6 +105,7 @@ export default function WeekDetail({ week, onClose }: Props) {
         value: s.value ? Number(s.value) : undefined,
         unit: (s.unit || 'reps') as Unit,
         load: s.load ? Number(s.load) : undefined,
+        jointAngle: s.jointAngle ? Number(s.jointAngle) : undefined,
         notes: s.notes || undefined,
         date: s.date,
       });
@@ -279,6 +282,22 @@ export default function WeekDetail({ week, onClose }: Props) {
                             <span className="text-xs text-gray-500">lbs</span>
                           </div>
                         </div>
+                        {/* Joint Angle — only for Overcoming Isometric */}
+                        {editingEntry?.category === 'Overcoming Isometric' && (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={editingEntry?.jointAngle ?? ''}
+                              onChange={(ev) => patchEdit({ jointAngle: ev.target.value })}
+                              placeholder="Joint Angle (°)"
+                              inputMode="numeric"
+                              min="0"
+                              max="360"
+                              className={`w-36 ${inputCls}`}
+                            />
+                            <span className="text-xs text-gray-500">degrees</span>
+                          </div>
+                        )}
                         {/* Date */}
                         <input
                           type="date"

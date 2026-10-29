@@ -176,6 +176,9 @@ export const CAPABILITIES: Capability[] = [
     demonstratedBy: [
       { nameContains: 'HSPU' },                       // 'HSPU', 'Wall HSPU', 'HSPU negatives'
       { nameContains: 'Handstand pushup negatives' }, // explicit match; 'Handstand pushup negatives' ⊂ 'Handstand' catches it in caps 1 & 4 too — correct, one set is evidence for multiple capabilities
+      { nameContains: 'HSPU', category: 'Overcoming Isometric' },
+      // A near-lockout or sticking-point overcoming isometric logged as 'HSPU ...' is direct evidence
+      // of pressing strength at the specific HSPU angle, counted only if named with 'HSPU'.
     ],
     builtBy: [
       { nameContains: 'Pike push' },   // 'Pike push-ups', 'Pike Push-ups (stair edge)', 'Pike pushup progressions', 'Single-leg pike pushups'
@@ -192,19 +195,23 @@ export const CAPABILITIES: Capability[] = [
       },
     ],
     basis:
-      'LEARNINGS.md — "Handstand ceiling: lats (not shoulders or pressing strength) are the current HSPU limiter." Pike push-up variants build the forward-lean shoulder-press strength that is the standard progression toward HSPU.',
+      'LEARNINGS.md — "Handstand ceiling: lats (not shoulders or pressing strength) are the current HSPU limiter." Pike push-up variants build the forward-lean shoulder-press strength that is the standard progression toward HSPU. HSPU overcoming isometric matcher added per LEARNINGS.md entry on joint-angle-specific strength transfer — a near-lockout or sticking-point hold logged with "HSPU" in the name is evidence of pressing capacity at that specific angle.',
   },
   {
     id: 'planche-strength',
     name: 'Planche strength',
-    demonstratedBy: [],
+    demonstratedBy: [
+      { nameContains: 'Planche', category: 'Overcoming Isometric' },
+      // An overcoming isometric at planche-lean angle is direct evidence of static strength at that position —
+      // the first thing that can flip this capability off "Building" before a full planche hold is achievable.
+    ],
     builtBy: [
       { nameContains: 'Planche lean' },
       { nameContains: 'Pseudo planche' },
     ],
     buildingNote: 'Active investment this window — no planche hold logged yet.',
     emptyDemoNote:
-      'No demonstrating exercise logged yet. Add a tuck planche hold or full planche hold once achievable to confirm this capability.',
+      'No demonstrating exercise logged yet. Add a tuck planche hold, full planche hold, or a planche-angle overcoming isometric to confirm this capability.',
     science:
       'A planche is a straight-arm, protracted-scapula hold — structurally different from a bent-arm push, because the serratus anterior (not the triceps) has to lock the shoulder blades flat against the ribcage to keep the body from folding. Planche lean and pseudo-planche push-ups train that scapular-protraction demand at progressively higher bodyweight-percentage before a full hold is attempted.',
     sources: [
@@ -219,12 +226,19 @@ export const CAPABILITIES: Capability[] = [
       },
     ],
     basis:
-      'LEARNINGS.md — no specific entry. Planche lean (GTG) and pseudo planche push-ups are logged progression work. demonstratedBy intentionally empty — stays at Building while builtBy work exists, never Demonstrated or Confirmed transfer until a planche hold is logged.',
+      'LEARNINGS.md — no specific entry for planche; overcoming isometric matcher added per LEARNINGS.md entry on joint-angle-specific strength transfer. Planche lean (GTG) and pseudo planche push-ups are logged progression work. An overcoming isometric at planche-lean angle provides the first demonstratedBy evidence before a full planche hold is achievable — static strength at that protraction angle is a real prerequisite.',
   },
   {
     id: 'muscle-up-transition',
     name: 'Muscle-up transition',
-    demonstratedBy: [],
+    demonstratedBy: [
+      { nameContains: 'False grip', category: 'Overcoming Isometric' },
+      // A false-grip overcoming isometric trains the specific wrist-position skill under near-max load —
+      // direct evidence of the transition demand, unlike general pull-up/dip volume.
+      { nameContains: 'Transition', category: 'Overcoming Isometric' },
+      // An overcoming isometric in the transition position (pull-to-dip pivot) is the most direct
+      // possible evidence of static strength at the exact sticking point.
+    ],
     builtBy: [
       { nameContains: 'Pull-up' },
       { nameContains: 'Pullup' },
@@ -245,6 +259,6 @@ export const CAPABILITIES: Capability[] = [
       },
     ],
     basis:
-      'LEARNINGS.md — no specific entry. Pull-ups and dips are genuine prerequisites for a muscle-up, but the transition itself is a distinct skill neither proves. demonstratedBy intentionally empty — add only once a muscle-up-specific exercise is logged.',
+      'LEARNINGS.md — no specific entry for muscle-up; overcoming isometric matchers added per LEARNINGS.md entry on joint-angle-specific strength transfer. Pull-ups and dips are genuine prerequisites but the transition skill neither proves. False-grip and transition-position overcoming isometrics are the first exercises that can demonstrate this capability — they train the specific wrist position and sticking-point strength directly.',
   },
 ];

@@ -45,6 +45,7 @@ function newRow(): RowState {
     reps: '',
     unit: 'reps',
     load: '',
+    jointAngle: '',
     notes: '',
   };
 }
@@ -107,6 +108,7 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
           value: r.reps ? Number(r.reps) : undefined,
           unit: r.unit as Unit,
           load: r.load ? Number(r.load) : undefined,
+          jointAngle: r.jointAngle ? Number(r.jointAngle) : undefined,
           notes: r.notes || undefined,
         })),
       );

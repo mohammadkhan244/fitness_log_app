@@ -10,6 +10,7 @@ export interface RowState {
   reps: string;
   unit: Unit;
   load: string;   // weight in lbs, separate from rep value
+  jointAngle: string; // degrees — only used when category = 'Overcoming Isometric'
   notes: string;
 }
 
@@ -22,7 +23,7 @@ interface Props {
 }
 
 const CATEGORIES: Category[] = [
-  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General', 'Cardio',
+  'Fast Tempo', 'Slow Tempo', 'Skills', 'Guardian', 'Benchmark', 'Rest/Chaos', 'General', 'Cardio', 'Overcoming Isometric',
 ];
 const EQUIPMENTS: Equipment[] = [
   'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',
@@ -116,6 +117,23 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
           </optgroup>
         </select>
       </div>
+
+      {/* Row 3b: joint angle — only for Overcoming Isometric */}
+      {row.category === 'Overcoming Isometric' && (
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            value={row.jointAngle}
+            onChange={(e) => onChange({ jointAngle: e.target.value })}
+            placeholder="Joint Angle (°)"
+            inputMode="numeric"
+            min="0"
+            max="360"
+            className={`w-40 ${fieldCls}`}
+          />
+          <span className="text-xs text-gray-500 flex-shrink-0">degrees</span>
+        </div>
+      )}
 
       {/* Row 4: weight (optional) + notes + remove */}
       <div className="flex gap-2 items-center">
