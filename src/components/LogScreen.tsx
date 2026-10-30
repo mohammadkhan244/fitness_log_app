@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '../db/schema';
 import { useExercises } from '../hooks/useExercises';
-import type { Category, Equipment, ExerciseSet, Unit } from '../types';
+import type { Category, Equipment, ExerciseSet, JointType, Side, Unit } from '../types';
 import ExerciseRow, { type RowState } from './ExerciseRow';
 import SessionHeader, { type SessionValues } from './SessionHeader';
 import { todayEST } from '../utils/dates';
@@ -47,6 +47,9 @@ function newRow(): RowState {
     unit: 'reps',
     load: '',
     jointAngle: '',
+    joint: '',
+    side: '',
+    rpe: '',
     notes: '',
   };
 }
@@ -110,6 +113,11 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
           unit: r.unit as Unit,
           load: r.load ? Number(r.load) : undefined,
           jointAngle: r.jointAngle ? Number(r.jointAngle) : undefined,
+          joint: r.joint ? (r.joint as JointType) : undefined,
+          side: r.side ? (r.side as Side) : undefined,
+          rpe: r.rpe ? Number(r.rpe) : undefined,
+          shoulderBefore: session.shoulderBefore,
+          shoulderAfter: session.shoulderAfter,
           notes: r.notes || undefined,
         })),
       );

@@ -6,6 +6,8 @@ export interface SessionValues {
   domain?: Domain;
   dayStatus?: DayStatus;
   cause?: Cause;
+  shoulderBefore?: number;
+  shoulderAfter?: number;
 }
 
 interface Props {
@@ -95,6 +97,36 @@ export default function SessionHeader({ values, onChange }: Props) {
           </select>
         </div>
       )}
+
+      {/* Row 4: Shoulder rating (optional, session-level) */}
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className="block text-xs text-gray-500 mb-1">Shoulder before (0–10)</label>
+          <input
+            type="number"
+            value={values.shoulderBefore ?? ''}
+            onChange={(e) => onChange({ shoulderBefore: e.target.value ? Number(e.target.value) : undefined })}
+            placeholder="—"
+            min="0"
+            max="10"
+            inputMode="numeric"
+            className={`w-full text-center ${inputCls}`}
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-xs text-gray-500 mb-1">Shoulder after (0–10)</label>
+          <input
+            type="number"
+            value={values.shoulderAfter ?? ''}
+            onChange={(e) => onChange({ shoulderAfter: e.target.value ? Number(e.target.value) : undefined })}
+            placeholder="—"
+            min="0"
+            max="10"
+            inputMode="numeric"
+            className={`w-full text-center ${inputCls}`}
+          />
+        </div>
+      </div>
     </div>
   );
 }

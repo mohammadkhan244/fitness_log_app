@@ -1,4 +1,4 @@
-import type { Category, Equipment, Unit } from '../types';
+import type { Category, Equipment, JointType, Side, Unit } from '../types';
 import Autocomplete from './Autocomplete';
 
 export interface RowState {
@@ -9,8 +9,11 @@ export interface RowState {
   sets: string;
   reps: string;
   unit: Unit;
-  load: string;   // weight in lbs, separate from rep value
-  jointAngle: string; // degrees — only used when category = 'Overcoming Isometric'
+  load: string;        // weight in lbs, separate from rep value
+  jointAngle: string;  // degrees — only used when category = 'Overcoming Isometric'
+  joint: JointType | ''; // joint type for angle
+  side: Side | '';     // optional: which side(s)
+  rpe: string;         // optional: RPE 1–10
   notes: string;
 }
 
@@ -28,6 +31,8 @@ const CATEGORIES: Category[] = [
 const EQUIPMENTS: Equipment[] = [
   'Bodyweight', 'Dumbbell', 'Kettlebell', 'Sandbag', 'Weighted Backpack', 'Machine/Cable', 'Barbell', 'None',
 ];
+const JOINTS: JointType[] = ['Elbow', 'Knee', 'Hip', 'Shoulder', 'Ankle', 'Other'];
+const SIDES: Side[] = ['Both', 'Left', 'Right', 'Each'];
 
 const DECIMAL_UNITS = new Set<Unit>(['miles', 'km', 'meters']);
 
@@ -123,22 +128,57 @@ export default function ExerciseRow({ row, exerciseNames, onChange, onRemove, au
         </select>
       </div>
 
-      {/* Row 3b: joint angle — only for Overcoming Isometric */}
+      {/* Row 3b: joint + angle — only for Overcoming Isometric */}
       {row.category === 'Overcoming Isometric' && (
         <div className="flex items-center gap-2">
+          <select
+            value={row.joint}
+            onChange={(e) => onChange({ joint: e.target.value as JointType | '' })}
+            className={`w-32 flex-shrink-0 ${fieldCls}`}
+          >
+            <option value="">Joint</option>
+            {JOINTS.map((j) => <option key={j} value={j}>{j}</option>)}
+          </select>
           <input
             type="number"
             value={row.jointAngle}
             onChange={(e) => onChange({ jointAngle: e.target.value })}
-            placeholder="Joint Angle (°)"
+            placeholder="Angle"
             inputMode="numeric"
             min="0"
             max="360"
-            className={`w-40 ${fieldCls}`}
+            className={`w-24 ${fieldCls}`}
           />
-          <span className="text-xs text-gray-500 flex-shrink-0">degrees</span>
+          <span className="text-xs text-gray-500 flex-shrink-0">
+            {row.joint && row.jointAngle ? `${row.joint} angle: ${row.jointAngle}°` : '°'}
+          </span>
         </div>
       )}
+
+      {/* Row 3c: Side + RPE (optional, all categories) */}
+      <div className="flex gap-2">
+        <select
+          value={row.side}
+          onChange={(e) => onChange({ side: e.target.value as Side | '' })}
+          className={`flex-1 ${fieldCls}`}
+        >
+          <option value="">Side (opt.)</option>
+          {SIDES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <div className="flex items-center gap-1.5 flex-1">
+          <input
+            type="number"
+            value={row.rpe}
+            onChange={(e) => onChange({ rpe: e.target.value })}
+            placeholder="RPE"
+            inputMode="numeric"
+            min="1"
+            max="10"
+            className={`flex-1 text-center ${fieldCls}`}
+          />
+          <span className="text-xs text-gray-500 flex-shrink-0">/ 10</span>
+        </div>
+      </div>
 
       {/* Row 4: weight (optional) + notes + remove */}
       <div className="flex gap-2 items-center">

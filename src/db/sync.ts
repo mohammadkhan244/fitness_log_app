@@ -1,5 +1,5 @@
 import { notionProxy } from '../api/proxy';
-import type { Category, Cause, DayStatus, Domain, Equipment, ExerciseSet, Unit } from '../types';
+import type { Category, Cause, DayStatus, Domain, Equipment, ExerciseSet, JointType, Side, Unit } from '../types';
 import { db } from './schema';
 
 const DS_ID = import.meta.env.VITE_WORKOUT_LOG_DATA_SOURCE_ID as string;
@@ -36,6 +36,13 @@ function toNotionPage(e: ExerciseSet): object {
       ...(e.cause && { Cause: { select: { name: e.cause } } }),
       ...(e.fatigue != null && { Fatigue: { number: e.fatigue } }),
       ...(e.jointAngle != null && { 'Joint Angle': { number: e.jointAngle } }),
+      ...(e.joint && e.jointAngle != null && {
+        Detail: { rich_text: [{ text: { content: `${e.joint} angle ${e.jointAngle}°` } }] },
+      }),
+      ...(e.side && { Side: { select: { name: e.side } } }),
+      ...(e.rpe != null && { RPE: { number: e.rpe } }),
+      ...(e.shoulderBefore != null && { 'Shoulder Before': { number: e.shoulderBefore } }),
+      ...(e.shoulderAfter != null && { 'Shoulder After': { number: e.shoulderAfter } }),
       ...(e.set != null && { Set: { number: e.set } }),
       ...(noteStr && { Notes: { rich_text: [{ text: { content: noteStr } }] } }),
       'Client ID': { rich_text: [{ text: { content: e.clientId } }] },
@@ -121,6 +128,9 @@ export interface EntryUpdate {
   unit?: Unit;
   load?: number;
   jointAngle?: number;
+  joint?: JointType;
+  side?: Side;
+  rpe?: number;
   notes?: string;
   date: string;
 }
@@ -145,6 +155,11 @@ export async function updateEntry(
           ...(patch.value != null && { Value: { number: patch.value } }),
           ...(patch.unit && patch.unit !== 'none' && { Unit: { select: { name: patch.unit } } }),
           ...(patch.jointAngle != null && { 'Joint Angle': { number: patch.jointAngle } }),
+          ...(patch.joint && patch.jointAngle != null && {
+            Detail: { rich_text: [{ text: { content: `${patch.joint} angle ${patch.jointAngle}°` } }] },
+          }),
+          ...(patch.side && { Side: { select: { name: patch.side } } }),
+          ...(patch.rpe != null && { RPE: { number: patch.rpe } }),
           Date: { date: { start: patch.date } },
           Week: { number: newWeek },
           Year: { select: { name: String(new Date(patch.date + 'T12:00:00').getFullYear()) } },
@@ -202,6 +217,12 @@ function fromNotionPage(page: NotionPage): Omit<ExerciseSet, 'id'> | null {
   const entryDate = date(pr['Date']);
   if (!exercise || !entryDate) return null;
 
+  // Detail "Elbow angle 90°" → parse joint + angle; preserve other Detail values as-is
+  const detailStr = str(pr['Detail']);
+  const angleMatch = detailStr?.match(/^(\w+) angle (\d+)°?$/);
+  const parsedJoint = angleMatch ? (angleMatch[1] as JointType) : undefined;
+  const parsedAngle = angleMatch ? Number(angleMatch[2]) : num(pr['Joint Angle']);
+
   return {
     clientId: str(pr['Client ID']) || crypto.randomUUID(),
     syncedAt: Date.now(),
@@ -214,13 +235,18 @@ function fromNotionPage(page: NotionPage): Omit<ExerciseSet, 'id'> | null {
     dayStatus: sel(pr['Day Status']) as DayStatus | undefined,
     cause: sel(pr['Cause']) as Cause | undefined,
     fatigue: num(pr['Fatigue']),
-    jointAngle: num(pr['Joint Angle']),
+    rpe: num(pr['RPE']),
+    shoulderBefore: num(pr['Shoulder Before']),
+    shoulderAfter: num(pr['Shoulder After']),
+    jointAngle: parsedAngle,
+    joint: parsedJoint,
     exercise,
     category: (sel(pr['Category']) as Category) || 'General',
     set: num(pr['Set']),
     value: num(pr['Value']),
     unit: sel(pr['Unit']) as Unit | undefined,
-    detail: str(pr['Detail']),
+    side: sel(pr['Side']) as Side | undefined,
+    detail: angleMatch ? undefined : detailStr,
     notes: str(pr['Notes']),
   };
 }

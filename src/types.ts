@@ -24,6 +24,8 @@ export type Category =
   | 'General'
   | 'Cardio'
   | 'Overcoming Isometric';
+export type Side = 'Both' | 'Left' | 'Right' | 'Each';
+export type JointType = 'Elbow' | 'Knee' | 'Hip' | 'Shoulder' | 'Ankle' | 'Other';
 export type Unit =
   | 'seconds'
   | 'minutes'
@@ -54,6 +56,11 @@ export interface ExerciseSet {
   fatigue?: number;       // 1–5
   load?: number;          // weight in lbs (separate from rep value)
   jointAngle?: number;    // degrees — only for Overcoming Isometric
+  joint?: JointType;      // joint type for angle — Overcoming Isometric
+  side?: Side;            // optional: which side(s)
+  rpe?: number;           // optional: RPE 1–10
+  shoulderBefore?: number; // session-level shoulder rating (0–10) before session
+  shoulderAfter?: number;  // session-level shoulder rating (0–10) after session
 
   exercise: string;
   category: Category;
