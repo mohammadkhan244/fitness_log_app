@@ -116,8 +116,6 @@ export default function LogScreen({ sync, saveTrigger, onSavingChange }: Props) 
           joint: r.joint ? (r.joint as JointType) : undefined,
           side: r.side ? (r.side as Side) : undefined,
           rpe: r.rpe ? Number(r.rpe) : undefined,
-          shoulderBefore: session.shoulderBefore,
-          shoulderAfter: session.shoulderAfter,
           notes: r.notes || undefined,
         })),
       );

@@ -18,8 +18,23 @@ function buildNotesString(load: number | undefined, notes: string | undefined): 
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
+function buildDetailString(
+  side: string | undefined,
+  rpe: number | undefined,
+  joint: string | undefined,
+  jointAngle: number | undefined,
+): string | undefined {
+  const parts: string[] = [];
+  if (side) parts.push(side);
+  if (rpe != null) parts.push(`RPE ${rpe}`);
+  if (joint && jointAngle != null) parts.push(`${joint} angle ${jointAngle}°`);
+  else if (jointAngle != null) parts.push(`${jointAngle}°`);
+  return parts.length > 0 ? parts.join(' | ') : undefined;
+}
+
 function toNotionPage(e: ExerciseSet): object {
   const noteStr = buildNotesString(e.load, e.notes);
+  const detailStr = buildDetailString(e.side, e.rpe, e.joint, e.jointAngle);
   return {
     parent: { type: 'data_source_id', data_source_id: DS_ID },
     properties: {
@@ -35,14 +50,7 @@ function toNotionPage(e: ExerciseSet): object {
       ...(e.dayStatus && { 'Day Status': { select: { name: e.dayStatus } } }),
       ...(e.cause && { Cause: { select: { name: e.cause } } }),
       ...(e.fatigue != null && { Fatigue: { number: e.fatigue } }),
-      ...(e.jointAngle != null && { 'Joint Angle': { number: e.jointAngle } }),
-      ...(e.joint && e.jointAngle != null && {
-        Detail: { rich_text: [{ text: { content: `${e.joint} angle ${e.jointAngle}°` } }] },
-      }),
-      ...(e.side && { Side: { select: { name: e.side } } }),
-      ...(e.rpe != null && { RPE: { number: e.rpe } }),
-      ...(e.shoulderBefore != null && { 'Shoulder Before': { number: e.shoulderBefore } }),
-      ...(e.shoulderAfter != null && { 'Shoulder After': { number: e.shoulderAfter } }),
+      ...(detailStr && { Detail: { rich_text: [{ text: { content: detailStr } }] } }),
       ...(e.set != null && { Set: { number: e.set } }),
       ...(noteStr && { Notes: { rich_text: [{ text: { content: noteStr } }] } }),
       'Client ID': { rich_text: [{ text: { content: e.clientId } }] },
@@ -144,6 +152,7 @@ export async function updateEntry(
   await db.sets.update(id, { ...patch, week: newWeek });
   if (notionPageId) {
     const noteStr = buildNotesString(patch.load, patch.notes);
+    const patchDetail = buildDetailString(patch.side, patch.rpe, patch.joint, patch.jointAngle);
     await notionProxy({
       path: `pages/${notionPageId}`,
       method: 'PATCH',
@@ -154,12 +163,7 @@ export async function updateEntry(
           ...(patch.equipment && { Equipment: { select: { name: patch.equipment } } }),
           ...(patch.value != null && { Value: { number: patch.value } }),
           ...(patch.unit && patch.unit !== 'none' && { Unit: { select: { name: patch.unit } } }),
-          ...(patch.jointAngle != null && { 'Joint Angle': { number: patch.jointAngle } }),
-          ...(patch.joint && patch.jointAngle != null && {
-            Detail: { rich_text: [{ text: { content: `${patch.joint} angle ${patch.jointAngle}°` } }] },
-          }),
-          ...(patch.side && { Side: { select: { name: patch.side } } }),
-          ...(patch.rpe != null && { RPE: { number: patch.rpe } }),
+          ...(patchDetail && { Detail: { rich_text: [{ text: { content: patchDetail } }] } }),
           Date: { date: { start: patch.date } },
           Week: { number: newWeek },
           Year: { select: { name: String(new Date(patch.date + 'T12:00:00').getFullYear()) } },
@@ -217,11 +221,21 @@ function fromNotionPage(page: NotionPage): Omit<ExerciseSet, 'id'> | null {
   const entryDate = date(pr['Date']);
   if (!exercise || !entryDate) return null;
 
-  // Detail "Elbow angle 90°" → parse joint + angle; preserve other Detail values as-is
+  // Detail format: "Left | RPE 7 | Elbow angle 10°" — any subset, pipe-separated.
+  // Also handles old single-part format "Elbow angle 90°" and bare historical values like "2x8".
   const detailStr = str(pr['Detail']);
-  const angleMatch = detailStr?.match(/^(\w+) angle (\d+)°?$/);
+  const parts = detailStr ? detailStr.split(' | ') : [];
+  const sideVal = parts.find(p => /^(Both|Left|Right|Each)$/.test(p)) as Side | undefined;
+  const rpePart = parts.find(p => /^RPE \d+$/.test(p));
+  const anglePart = parts.find(p => /^\w+ angle \d+°?$/.test(p));
+  const bareAnglePart = !anglePart ? parts.find(p => /^\d+°?$/.test(p)) : undefined;
+  const angleMatch = anglePart?.match(/^(\w+) angle (\d+)°?$/);
   const parsedJoint = angleMatch ? (angleMatch[1] as JointType) : undefined;
-  const parsedAngle = angleMatch ? Number(angleMatch[2]) : num(pr['Joint Angle']);
+  const parsedRpe = rpePart ? Number(rpePart.slice(4)) : undefined;
+  const parsedAngle = angleMatch ? Number(angleMatch[2])
+    : bareAnglePart ? Number(bareAnglePart.replace('°', ''))
+    : num(pr['Joint Angle']); // fallback for old Notion rows that used the number property
+  const isOurFormat = !!(sideVal || rpePart || anglePart || bareAnglePart);
 
   return {
     clientId: str(pr['Client ID']) || crypto.randomUUID(),
@@ -235,9 +249,7 @@ function fromNotionPage(page: NotionPage): Omit<ExerciseSet, 'id'> | null {
     dayStatus: sel(pr['Day Status']) as DayStatus | undefined,
     cause: sel(pr['Cause']) as Cause | undefined,
     fatigue: num(pr['Fatigue']),
-    rpe: num(pr['RPE']),
-    shoulderBefore: num(pr['Shoulder Before']),
-    shoulderAfter: num(pr['Shoulder After']),
+    rpe: parsedRpe,
     jointAngle: parsedAngle,
     joint: parsedJoint,
     exercise,
@@ -245,8 +257,8 @@ function fromNotionPage(page: NotionPage): Omit<ExerciseSet, 'id'> | null {
     set: num(pr['Set']),
     value: num(pr['Value']),
     unit: sel(pr['Unit']) as Unit | undefined,
-    side: sel(pr['Side']) as Side | undefined,
-    detail: angleMatch ? undefined : detailStr,
+    side: sideVal,
+    detail: isOurFormat ? undefined : detailStr,
     notes: str(pr['Notes']),
   };
 }

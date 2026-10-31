@@ -59,9 +59,6 @@ export interface ExerciseSet {
   joint?: JointType;      // joint type for angle — Overcoming Isometric
   side?: Side;            // optional: which side(s)
   rpe?: number;           // optional: RPE 1–10
-  shoulderBefore?: number; // session-level shoulder rating (0–10) before session
-  shoulderAfter?: number;  // session-level shoulder rating (0–10) after session
-
   exercise: string;
   category: Category;
   set?: number;
